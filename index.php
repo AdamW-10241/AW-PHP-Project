@@ -1,13 +1,17 @@
 <?php
 require_once 'vendor/autoload.php';
-// Testing phpdotenv
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
-$dotenv->load();
+// Classes used in this stage
+use Adam\AwPhpProject\App;
+// Create app from App class
+$app = new App();
+$site_name = $app -> site_name;
 // Loading the twig template
 $loader = new \Twig\Loader\FilesystemLoader( 'templates' );
 $twig = new \Twig\Environment( $loader );
 $template = $twig -> load( 'page.twig' );
 // Render the output
-echo $template -> render( [] );
+echo $template -> render( [
+    'site_name' => $site_name
+] );
 ?>
 
