@@ -7,23 +7,19 @@ use Adam\AwPhpProject\Database;
 class Account extends Database {
     public function __construct()
     {
-        try {
-            $db = new Database();
-            if (!$db) {
-                throw new Exception("No database available.");
-            }
-            else {
-                $this -> connection = $db -> connection;
-            }
-        }
-        catch (Exception $exc) {
-            exit($exc->getMessage());
-        }
+        parent::__construct();
     }
 
     public function create($email, $password)
     {
         // Perform query to create an account with email and password
+        $query = "INSERT INTO Account (
+            email,
+            password,
+            reset,
+            active,
+            created
+            VALUES (?,?,?,TRUE,NOW(),)"
     }
 
     public function update()
