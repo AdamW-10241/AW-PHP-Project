@@ -10,6 +10,7 @@ $app = new App();
 $site_name = $app -> site_name;
 // create data variables
 $page_title = "Signup for an account";
+$signup_errors = [];
 
 // Checking for for submission via POST
 if ($_SERVER['REQUEST_METHOD'] == "POST") {
@@ -21,6 +22,13 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
     $account = new Account();
     // Call the create method in account
     $account -> create($email, $password);
+    if ($account -> response['success'] == true) {
+        // Account has been created
+    }
+    else {
+        // There are errors
+        $signup_errors['message'] = implode(",", $account -> response['errors']);
+    }
 }
 
 // Loading the twig template
@@ -31,6 +39,7 @@ $template = $twig -> load( 'signup.twig' );
 // Render the ouput
 echo $template -> render( [ 
     'title' => $page_title, 
-    'website_name' => $site_name 
+    'website_name' => $site_name,
+    'errors' => $signup_errors
 ] );
 ?>
