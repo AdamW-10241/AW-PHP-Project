@@ -33,14 +33,14 @@ class Account extends Database {
             $this -> errors['password'] = "Password does not meet requirements.";
         }
         // If there are errors, return the response
-        if (count($this -> errors) > 0) {
+        if (\count($this -> errors) > 0) {
             $this -> response['success'] = 0;
             $this -> response['errors'] = $this -> errors;
             return($this -> response);
         }
         // If there are no errors
-        $reset = md5(time().random_int(0,5000));
-        $hashed = password_hash($password, PASSWORD_DEFAULT);
+        $reset = \md5(time().random_int(0,5000));
+        $hashed = \password_hash($password, \PASSWORD_DEFAULT);
         // Create mysql preparedd statement
         $statement = $this -> connection -> prepare($create_query);
         // Binding parameters to the query
