@@ -16,21 +16,15 @@ class Account extends Database {
     public function create($email, $password)
     {
         // Perform query to create an account with email and password
-        $create_query = "INSERT INTO Account (
-            email,
-            password,
-            reset,
-            active,
-            created)
-            VALUES (?,?,?,1,NOW())
-        )";
+        $create_query = "INSERT INTO Account( email, password, reset, active, created ) VALUES ( ?, ?, ?, 1, NOW() )";
+        
         if (Validator::validateEmail($email) == false) {
             // Email is not valid
-            $this -> errors['email'] = "Email address is not valid.";
+            $this -> errors['email'] = "Email address is not valid";
         }
         if (Validator::validatePassword($password) == false) {
             // Password is not valid
-            $this -> errors['password'] = "Password does not meet requirements.";
+            $this -> errors['password'] = "Password does not meet requirements";
         }
         // If there are errors, return the response
         if (\count($this -> errors) > 0) {

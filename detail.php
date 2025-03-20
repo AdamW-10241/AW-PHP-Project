@@ -15,9 +15,12 @@ $loader = new \Twig\Loader\FilesystemLoader( 'templates' );
 $twig = new \Twig\Environment( $loader );
 $template = $twig -> load( 'page.twig' );
 
-// Render the output
-echo $template -> render( [
-    'items' => $items
-] );
+if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET["id"])) {
+    echo "detail for ";
+    echo $_GET["id"];
+}
+else {
+    // Redirect to home page
+    header("location: index.php");
+}
 ?>
-

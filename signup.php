@@ -9,7 +9,6 @@ use Adam\AwPhpProject\Account;
 $app = new App();
 $site_name = $app -> site_name;
 // create data variables
-$page_title = "Signup for an account";
 $signup_errors = [];
 
 // Checking for for submission via POST
@@ -38,7 +37,6 @@ $template = $twig -> load( 'signup.twig' );
 
 // Render the ouput
 echo $template -> render( [ 
-    'title' => $page_title, 
     'website_name' => $site_name,
     'errors' => $signup_errors
 ] );
