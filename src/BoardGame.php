@@ -27,7 +27,7 @@ class BoardGame extends Database {
             WHERE BoardGame.visible=1
             GROUP BY id;
         ";
-        $statement = $this -> connection -> prepare($get_query);
+        $statement = $this -> connection -> prepare( $get_query );
         $statement -> execute();
 
         // Get the results
@@ -50,15 +50,27 @@ class BoardGame extends Database {
             BoardGame.title AS title,
             BoardGame.tagline AS tagline,
             BoardGame.year AS year,
+            BoardGame.isbn10 AS isbn10,
+            BoardGame.isbn13 AS isbn13,
+            BoardGame.pages as pages,
+            BoardGame.summary as summary,
+            BoardGame.tags as tags,
             BoardGame.image AS image,
             GROUP_CONCAT(CONCAT(Author.author_first, ' ', Author.author_last) SEPARATOR ', ') AS author
             FROM 
             `BoardGame` 
             INNER JOIN BoardGame_Author ON BoardGame_Author.boardgame_id = BoardGame.id
             INNER JOIN Author ON BoardGame_Author.author_id = Author.author_id
-            WHERE BoardGame.visible=1
+            WHERE BoardGame.visible=1 AND BoardGame.id = ?
             GROUP BY id;
         ";
+        $statement = $this -> connection -> prepare( $detail_query );
+        $statement -> bind_param( "i", $id );
+        $statement -> execute();
+        $boardgame_detail = array();
+        $result = $statement -> get_result();
+        $boardgame_detail = $result -> fetch_assoc();
+        return $boardgame_detail;
     }
 }
 ?>

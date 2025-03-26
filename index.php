@@ -6,7 +6,6 @@ use Adam\AwPhpProject\BoardGame;
 
 // Create app from App class
 $app = new App();
-
 $boardgame = new BoardGame();
 $items = $boardgame -> get();
 
