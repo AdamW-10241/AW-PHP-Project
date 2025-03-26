@@ -4,7 +4,7 @@ namespace Adam\AwPhpProject;
 use \Exception;
 use Adam\AwPhpProject\Database;
 
-class Book extends Database {
+class BoardGame extends Database {
     public function __construct()
     {
         parent::__construct();
@@ -14,53 +14,51 @@ class Book extends Database {
     {
         $get_query = "
             SELECT 
-            Book.id AS id,
-            Book.title AS title,
-            Book.tagline AS tagline,
-            Book.year AS year,
-            Book.image AS image,
+            BoardGame.id AS id,
+            BoardGame.title AS title,
+            BoardGame.tagline AS tagline,
+            BoardGame.year AS year,
+            BoardGame.image AS image,
             GROUP_CONCAT(CONCAT(Author.author_first, ' ', Author.author_last) SEPARATOR ', ') AS author
             FROM 
-            `Book` 
-            INNER JOIN Book_Author ON Book_Author.book_id = Book.id
-            INNER JOIN Author ON Book_Author.author_id = Author.author_id
-            WHERE Book.visible=1
+            `BoardGame` 
+            INNER JOIN BoardGame_Author ON BoardGame_Author.boardgame_id = BoardGame.id
+            INNER JOIN Author ON BoardGame_Author.author_id = Author.author_id
+            WHERE BoardGame.visible=1
             GROUP BY id;
         ";
         $statement = $this -> connection -> prepare($get_query);
         $statement -> execute();
 
         // Get the results
-        $books = array();
+        $boardgames = array();
         $result = $statement -> get_result();
 
         // Loop through the result to add to array
         while ( $row = $result -> fetch_assoc() ) {
-            \array_push( $books, $row );
+            \array_push( $boardgames, $row );
         }
         
         // Return the array of items
-        return $books;
+        return $boardgames;
     }
 
     public function getDetail($id) {
         $detail_query = "
             SELECT 
-            Book.id AS id,
-            Book.title AS title,
-            Book.tagline AS tagline,
-            Book.year AS year,
-            Book.image AS image,
+            BoardGame.id AS id,
+            BoardGame.title AS title,
+            BoardGame.tagline AS tagline,
+            BoardGame.year AS year,
+            BoardGame.image AS image,
             GROUP_CONCAT(CONCAT(Author.author_first, ' ', Author.author_last) SEPARATOR ', ') AS author
             FROM 
-            `Book` 
-            INNER JOIN Book_Author ON Book_Author.book_id = Book.id
-            INNER JOIN Author ON Book_Author.author_id = Author.author_id
-            WHERE Book.visible=1
+            `BoardGame` 
+            INNER JOIN BoardGame_Author ON BoardGame_Author.boardgame_id = BoardGame.id
+            INNER JOIN Author ON BoardGame_Author.author_id = Author.author_id
+            WHERE BoardGame.visible=1
             GROUP BY id;
         ";
-
-        
     }
 }
 ?>

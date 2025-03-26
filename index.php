@@ -2,13 +2,13 @@
 require_once 'vendor/autoload.php';
 // Classes used in this stage
 use Adam\AwPhpProject\App;
-use Adam\AwPhpProject\Book;
+use Adam\AwPhpProject\BoardGame;
 
 // Create app from App class
 $app = new App();
 
-$book = new Book();
-$items = $book -> get();
+$boardgame = new BoardGame();
+$items = $boardgame -> get();
 
 // Loading the twig template
 $loader = new \Twig\Loader\FilesystemLoader( 'templates' );
