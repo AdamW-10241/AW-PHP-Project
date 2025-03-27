@@ -4,6 +4,7 @@ require_once 'vendor/autoload.php';
 // Classes used in this page
 use Adam\AwPhpProject\App;
 use Adam\AwPhpProject\Account;
+use Adam\AwPhpProject\SessionManager;
 
 // Create app from App class
 $app = new App();
@@ -22,7 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
     // Call the create method in account
     $account -> create($email, $password);
     if ($account -> response['success'] == true) {
-        // Account has been created
+        // Account has been created, set the session variable
+        $_SESSION['email'] = $email;
     }
     else {
         // There are errors

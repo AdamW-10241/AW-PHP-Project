@@ -18,6 +18,12 @@ if ( $_GET['id'] ) {
     $detail = $boardgame -> getDetail( $_GET['id'] );
 }
 
+// Checking if the user is logged in
+$isauthenticated = false;
+if ( isset( $_SESSION['email'] ) ) {
+    $isauthenticated = true;
+}
+
 $page_title = "Detail for " . $detail['title'];
 
 // Loading the twig template
@@ -27,6 +33,7 @@ $template = $twig -> load( 'detail.twig' );
 
 // Render the output
 echo $template -> render( [
-    'detail' => $detail
+    'detail' => $detail,
+    'loggedin' => $isauthenticated
 ] );
 ?>

@@ -16,7 +16,10 @@ class Account extends Database {
     public function create($email, $password)
     {
         // Perform query to create an account with email and password
-        $create_query = "INSERT INTO Account( email, password, reset, active, created ) VALUES ( ?, ?, ?, 1, NOW() )";
+        $create_query = "INSERT INTO 
+        Account( email, password, reset, active, last_seen, created ) 
+        VALUES ( ?, ?, ?, 1, ?, ? )
+        ";
         
         if (Validator::validateEmail($email) == false) {
             // Email is not valid
@@ -33,12 +36,13 @@ class Account extends Database {
             return($this -> response);
         }
         // If there are no errors
-        $reset = \md5(time().random_int(0,5000));
-        $hashed = \password_hash($password, \PASSWORD_DEFAULT);
+        $reset = \md5(time().random_int( 0, 5000 ));
+        $hashed = \password_hash( $password, \PASSWORD_DEFAULT );
+        $created = date('Y-m-d H:i:s', time() );
         // Create mysql preparedd statement
         $statement = $this -> connection -> prepare($create_query);
         // Binding parameters to the query
-        $statement -> bind_param("sss", $email, $hashed, $reset);
+        $statement -> bind_param( "sssss", $email, $hashed, $reset, $created, $created );
         // Execute statement
         if ($statement -> execute()) {
             $this -> response['success'] = 1;

@@ -1,29 +1,21 @@
 <?php
 require_once 'vendor/autoload.php';
+
 // Classes used in this stage
 use Adam\AwPhpProject\App;
-use Adam\AwPhpProject\BoardGame;
 
 // Create app from App class
 $app = new App();
-$boardgame = new BoardGame();
-$items = $boardgame -> get();
-
-// Checking if the user is logged in
-$isauthenticated = false;
-if ( isset( $_SESSION['email'] ) ) {
-    $isauthenticated = true;
-}
+$site_name = $app -> site_name;
 
 // Loading the twig template
 $loader = new \Twig\Loader\FilesystemLoader( 'templates' );
 $twig = new \Twig\Environment( $loader );
-$template = $twig -> load( 'page.twig' );
+$template = $twig -> load( 'favourites.twig' );
 
 // Render the output
 echo $template -> render( [
-    'items' => $items,
-    'loggedin' => $isauthenticated
+    'site_name' => $site_name
 ] );
 ?>
 
