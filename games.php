@@ -18,7 +18,7 @@ if ( isset( $_SESSION['email'] ) ) {
 // Loading the twig template
 $loader = new \Twig\Loader\FilesystemLoader( 'templates' );
 $twig = new \Twig\Environment( $loader );
-$template = $twig -> load( 'home.twig' );
+$template = $twig -> load( 'games.twig' );
 
 // Render the output
 echo $template -> render( [
@@ -26,4 +26,3 @@ echo $template -> render( [
     'loggedin' => $isauthenticated
 ] );
 ?>
-

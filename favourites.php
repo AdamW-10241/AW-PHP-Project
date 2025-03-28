@@ -6,7 +6,12 @@ use Adam\AwPhpProject\App;
 
 // Create app from App class
 $app = new App();
-$site_name = $app -> site_name;
+
+// Checking if the user is logged in
+$isauthenticated = false;
+if ( isset( $_SESSION['email'] ) ) {
+    $isauthenticated = true;
+}
 
 // Loading the twig template
 $loader = new \Twig\Loader\FilesystemLoader( 'templates' );
@@ -15,7 +20,7 @@ $template = $twig -> load( 'favourites.twig' );
 
 // Render the output
 echo $template -> render( [
-    'site_name' => $site_name
+    'loggedin' => $isauthenticated
 ] );
 ?>
 

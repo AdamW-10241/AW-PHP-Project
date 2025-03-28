@@ -11,6 +11,7 @@ $app = new App();
 $site_name = $app -> site_name;
 // create data variables
 $signup_errors = [];
+$signup_success = false;
 
 // Checking for for submission via POST
 if ($_SERVER['REQUEST_METHOD'] == "POST") {
@@ -25,10 +26,11 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
     if ($account -> response['success'] == true) {
         // Account has been created, set the session variable
         $_SESSION['email'] = $email;
+        $signup_success = true;
     }
     else {
         // There are errors
-        $signup_errors['message'] = implode(",", $account -> response['errors']);
+        $signup_errors['message'] = implode(" ", $account -> response['errors']);
     }
 }
 
@@ -40,6 +42,7 @@ $template = $twig -> load( 'signup.twig' );
 // Render the ouput
 echo $template -> render( [ 
     'website_name' => $site_name,
-    'errors' => $signup_errors
+    'errors' => $signup_errors,
+    'success' => $signup_success
 ] );
 ?>
