@@ -18,14 +18,27 @@ class BoardGame extends Database {
             BoardGame.title AS title,
             BoardGame.tagline AS tagline,
             BoardGame.year AS year,
+            BoardGame.description AS description,
+            BoardGame.player_range AS player_range,
+            BoardGame.age_range AS age_range,
+            BoardGame.playtime_range AS playtime_range,
             BoardGame.image AS image,
-            GROUP_CONCAT(CONCAT(Author.author_first, ' ', Author.author_last) SEPARATOR ', ') AS author
-            FROM 
-            `BoardGame` 
-            INNER JOIN BoardGame_Author ON BoardGame_Author.boardgame_id = BoardGame.id
-            INNER JOIN Author ON BoardGame_Author.author_id = Author.author_id
-            WHERE BoardGame.visible=1
-            GROUP BY id;
+            BoardGame.tags AS tags,
+            (SELECT GROUP_CONCAT(DISTINCT Publisher.name SEPARATOR ', ') 
+            FROM BoardGame_Publisher 
+            INNER JOIN Publisher ON BoardGame_Publisher.publisher_id = Publisher.publisher_id
+            WHERE BoardGame_Publisher.boardgame_id = BoardGame.id) AS publishers,
+            (SELECT GROUP_CONCAT(DISTINCT CONCAT(Designer.first_name, ' ', Designer.last_name) SEPARATOR ', ') 
+            FROM BoardGame_Designer 
+            INNER JOIN Designer ON BoardGame_Designer.designer_id = Designer.designer_id
+            WHERE BoardGame_Designer.boardgame_id = BoardGame.id) AS designers,
+            (SELECT GROUP_CONCAT(DISTINCT CONCAT(Artist.first_name, ' ', Artist.last_name) SEPARATOR ', ') 
+            FROM BoardGame_Artist 
+            INNER JOIN Artist ON BoardGame_Artist.artist_id = Artist.artist_id
+            WHERE BoardGame_Artist.boardgame_id = BoardGame.id) AS artists
+            FROM BoardGame
+            WHERE BoardGame.visible = 1
+            GROUP BY BoardGame.id;
         ";
         $statement = $this -> connection -> prepare( $get_query );
         $statement -> execute();
@@ -50,19 +63,27 @@ class BoardGame extends Database {
             BoardGame.title AS title,
             BoardGame.tagline AS tagline,
             BoardGame.year AS year,
-            BoardGame.isbn10 AS isbn10,
-            BoardGame.isbn13 AS isbn13,
-            BoardGame.pages as pages,
-            BoardGame.summary as summary,
-            BoardGame.tags as tags,
+            BoardGame.description AS description,
+            BoardGame.player_range AS player_range,
+            BoardGame.age_range AS age_range,
+            BoardGame.playtime_range AS playtime_range,
             BoardGame.image AS image,
-            GROUP_CONCAT(CONCAT(Author.author_first, ' ', Author.author_last) SEPARATOR ', ') AS author
-            FROM 
-            `BoardGame` 
-            INNER JOIN BoardGame_Author ON BoardGame_Author.boardgame_id = BoardGame.id
-            INNER JOIN Author ON BoardGame_Author.author_id = Author.author_id
-            WHERE BoardGame.visible=1 AND BoardGame.id = ?
-            GROUP BY id;
+            BoardGame.tags AS tags,
+            (SELECT GROUP_CONCAT(DISTINCT Publisher.name SEPARATOR ', ') 
+            FROM BoardGame_Publisher 
+            INNER JOIN Publisher ON BoardGame_Publisher.publisher_id = Publisher.publisher_id
+            WHERE BoardGame_Publisher.boardgame_id = BoardGame.id) AS publishers,
+            (SELECT GROUP_CONCAT(DISTINCT CONCAT(Designer.first_name, ' ', Designer.last_name) SEPARATOR ', ') 
+            FROM BoardGame_Designer 
+            INNER JOIN Designer ON BoardGame_Designer.designer_id = Designer.designer_id
+            WHERE BoardGame_Designer.boardgame_id = BoardGame.id) AS designers,
+            (SELECT GROUP_CONCAT(DISTINCT CONCAT(Artist.first_name, ' ', Artist.last_name) SEPARATOR ', ') 
+            FROM BoardGame_Artist 
+            INNER JOIN Artist ON BoardGame_Artist.artist_id = Artist.artist_id
+            WHERE BoardGame_Artist.boardgame_id = BoardGame.id) AS artists
+            FROM BoardGame
+            WHERE BoardGame.visible = 1 AND BoardGame.id = ?
+            GROUP BY BoardGame.id;
         ";
         $statement = $this -> connection -> prepare( $detail_query );
         $statement -> bind_param( "i", $id );

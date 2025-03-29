@@ -11,27 +11,29 @@
             <div class="col-md-8">
                 <h2>{{detail.title}}</h2>
                 <h5>{{detail.tagline}}</h5>
-                <h5>By {{detail.author}}</h5>
+                <p class="card-text">Artists: {{detail.artists}}</p>
+                <p class="card-text">Designers: {{detail.designers}}</p>
+                <p class="card-text">Publishers: {{detail.publishers}}</p>
                 <ul class="list-group w-50 p-3">
                     <li class="list-group-item">
                         <span class="text-uppercase">Year Published : </span>
                         {{detail.year}}
                     </li>
                     <li class="list-group-item">
-                        <span class="text-uppercase">Pages : </span>
-                        {{detail.pages}}
+                        <span class="text-uppercase">Player Range : </span>
+                        {{detail.player_range}}
                     </li>
                     <li class="list-group-item">
-                        <span class="text-uppercase">ISBN 10 : </span>
-                        {{detail.isbn10}}
+                        <span class="text-uppercase">Age Range : </span>
+                        {{detail.age_range}}
                     </li>
                     <li class="list-group-item">
-                        <span class="text-uppercase">ISBN 13 : </span>
-                        {{detail.isbn13}}
-                    </li>
+                        <span class="text-uppercase">Playtime Range : </span>
+                        {{detail.playtime_range}}
+                    </li>                
                 </ul>
-                <h4>Summary</h4>
-                <p>{{detail.summary}}</p>
+                <h4>Description</h4>
+                <p>{{detail.description}}</p>
                 {% if loggedin == true %}
                 <button class="btn btn-primary">Review this board game</button
                 {% endif %}

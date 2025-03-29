@@ -12,7 +12,7 @@
                 <div class="col-md-3 mb-3">
                     <div class="card" style="min-height: 30rem;">
                         <div class="card-body">
-                            <img src="assets/cover_images/{{item.image}}"  
+                            <img src="assets/cover_images/{{item.image}}"  -
                                 class="card-img-top" 
                                 alt="Board Game Art for {{item.title}}"
                                 style="aspect-ratio: 3/4; object-fit: contain;"
@@ -20,7 +20,9 @@
                             <h5 class="card-title" style="min-height: 48px;">
                                 {{item.title}}
                             </h5>
-                            <p class="card-text">By {{item.author}}</p>
+                            <p class="card-text">Artists: {{item.artists}}</p>
+                            <p class="card-text">Designers: {{item.designers}}</p>
+                            <p class="card-text">Publishers: {{item.publishers}}</p>
                             <a href="detail.php?id={{item.id}}" class="btn btn-info">View detail</a>
                         </div>
                     </div>
