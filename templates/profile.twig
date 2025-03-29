@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+{% include 'head.twig' %}
+<body>
+    {% include 'navigation.twig' %}
+    <div class="container mt-4">
+        <div class="text-center mb-3">
+            <h1 class="display-4 fw-bold text-primary mb-2">My Profile</h1>
+            <p class="lead text-muted">Manage your account settings</p>
+            <div class="d-flex justify-content-center">
+                <div class="border-bottom border-primary" style="width: 100px;"></div>
+            </div>
+        </div>
+        <div class="row justify-content-center mt-4">
+            <div class="col-md-8">
+                {% if success_message %}
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        {{ success_message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endif %}
+
+                {% if error_message %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        {{ error_message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endif %}
+
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Update Email</h5>
+                        <form method="POST" action="profile.php" class="needs-validation" novalidate>
+                            <input type="hidden" name="action" value="update_email">
+                            <div class="mb-3">
+                                <label for="current_email" class="form-label">Current Email</label>
+                                <input type="email" class="form-control" id="current_email" value="{{ user.email }}" disabled>
+                            </div>
+                            <div class="mb-3">
+                                <label for="new_email" class="form-label">New Email</label>
+                                <input type="email" class="form-control" id="new_email" name="new_email" required>
+                                <div class="invalid-feedback">
+                                    Please enter a valid email address.
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="confirm_email" class="form-label">Confirm New Email</label>
+                                <input type="email" class="form-control" id="confirm_email" name="confirm_email" required>
+                                <div class="invalid-feedback">
+                                    Please confirm your new email address.
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Update Email</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Change Password</h5>
+                        <form method="POST" action="profile.php" class="needs-validation" novalidate>
+                            <input type="hidden" name="action" value="update_password">
+                            <div class="mb-3">
+                                <label for="current_password" class="form-label">Current Password</label>
+                                <input type="password" class="form-control" id="current_password" name="current_password" required>
+                                <div class="invalid-feedback">
+                                    Please enter your current password.
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="new_password" class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="new_password" name="new_password" required>
+                                <div class="invalid-feedback">
+                                    Please enter a new password.
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                                <div class="invalid-feedback">
+                                    Please confirm your new password.
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Change Password</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'footer.twig' %}
+    <script>
+        // Form validation
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+        })()
+    </script>
+</body>
+</html> 

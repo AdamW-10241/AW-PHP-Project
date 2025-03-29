@@ -40,16 +40,16 @@ class BoardGame extends Database {
             WHERE BoardGame.visible = 1
             GROUP BY BoardGame.id;
         ";
-        $statement = $this -> connection -> prepare( $get_query );
-        $statement -> execute();
+        $statement = $this->connection->prepare($get_query);
+        $statement->execute();
 
         // Get the results
         $boardgames = array();
-        $result = $statement -> get_result();
+        $result = $statement->get_result();
 
         // Loop through the result to add to array
-        while ( $row = $result -> fetch_assoc() ) {
-            \array_push( $boardgames, $row );
+        while ($row = $result->fetch_assoc()) {
+            array_push($boardgames, $row);
         }
         
         // Return the array of items
@@ -85,13 +85,11 @@ class BoardGame extends Database {
             WHERE BoardGame.visible = 1 AND BoardGame.id = ?
             GROUP BY BoardGame.id;
         ";
-        $statement = $this -> connection -> prepare( $detail_query );
-        $statement -> bind_param( "i", $id );
-        $statement -> execute();
-        $boardgame_detail = array();
-        $result = $statement -> get_result();
-        $boardgame_detail = $result -> fetch_assoc();
-        return $boardgame_detail;
+        $statement = $this->connection->prepare($detail_query);
+        $statement->bind_param("i", $id);
+        $statement->execute();
+        $result = $statement->get_result();
+        return $result->fetch_assoc();
     }
 }
 ?>

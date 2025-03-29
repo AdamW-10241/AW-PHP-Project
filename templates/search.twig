@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+{% include 'head.twig' %}
+<body>
+    {% include 'navigation.twig' %}
+    <div class="container mt-5">
+        <h1 class="mb-4">Search Results</h1>
+        
+        {% if search_query %}
+            <p class="lead">Showing results for "{{ search_query }}"</p>
+        {% endif %}
+
+        {% if search_results|length > 0 %}
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+                {% for game in search_results %}
+                    <div class="col">
+                        <div class="card h-100 d-flex flex-column">
+                            <div class="card-img-top" style="height: 200px; overflow: hidden;">
+                                <img src="assets/cover_images/board_{{ game.id }}.png" class="w-100 h-100 object-fit-cover" alt="{{ game.name }}">
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">{{ game.name }}</h5>
+                                <p class="card-text flex-grow-1">{{ game.description }}</p>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        <i class="fas fa-users"></i> {{ game.min_players }}-{{ game.max_players }} players
+                                        <br>
+                                        <i class="fas fa-clock"></i> {{ game.play_time }} minutes
+                                    </small>
+                                </p>
+                            </div>
+                            <div class="card-footer mt-auto">
+                                <a href="/detail.php?id={{ game.id }}" class="btn btn-primary w-100">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                No games found matching your search. Try different keywords or check out our <a href="/games.php">full collection</a>.
+            </div>
+        {% endif %}
+    </div>
+    {% include 'footer.twig' %}
+</body>
+</html> 

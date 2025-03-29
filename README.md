@@ -1,4 +1,62 @@
-# Board Games Website - PHP Project
+# Board Games Website
+
+A PHP-based web application for managing and reviewing board games.
+
+## Features
+
+- User authentication (login/signup)
+- Board game catalog with detailed information
+- Game reviews and ratings
+- User favorites
+- News and blog sections
+- Newsletter subscription
+
+## Requirements
+
+- PHP 8.0 or higher
+- MariaDB 10.4 or higher
+- Composer for PHP dependencies
+- Web server (Apache/Nginx)
+
+## Installation
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   composer install
+   ```
+3. Set up your database:
+   - Create a MariaDB database
+   - Import the database schema:
+     ```bash
+     mysql -u your_username -p your_database < database.sql
+     ```
+4. Configure your environment:
+   - Copy `.env.example` to `.env`
+   - Update database credentials in `.env`
+
+## Database Structure
+
+The application uses the following main tables:
+- `Account` - User accounts and authentication
+- `BoardGame` - Main board game information
+- `games` - Featured and popular games
+- `news` - Website news and announcements
+- `reviews` - User reviews and ratings
+- `favorites` - User's favorite games
+- `blog_posts` - Blog content
+- `comments` - User comments on blog posts
+
+## Development
+
+The project uses:
+- Twig for templating
+- Bootstrap 5 for styling
+- Font Awesome for icons
+
+## License
+
+This project is licensed under the MIT License.
 
 ## About This Project
 

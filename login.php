@@ -3,6 +3,7 @@
 session_start();
 
 require_once 'vendor/autoload.php';
+require_once 'session_helper.php';
 
 // Classes used in this page
 use Adam\AwPhpProject\App;
@@ -16,6 +17,13 @@ $site_name = $app->site_name;
 // Create data variables
 $login_errors = [];
 $login_success = false;
+
+// Check if user is already logged in
+if (isLoggedIn()) {
+    // Redirect to home if already logged in
+    header("location: /");
+    exit();
+}
 
 // Checking for form submission via POST
 if ($_SERVER['REQUEST_METHOD'] == "POST") {
@@ -49,6 +57,7 @@ $template = $twig->load('login.twig');
 echo $template->render([
     'website_name' => $site_name,
     'errors' => $login_errors,
-    'success' => $login_success
+    'success' => $login_success,
+    'loggedin' => isLoggedIn()
 ]);
 ?>
