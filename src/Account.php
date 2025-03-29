@@ -83,5 +83,55 @@ class Account extends Database {
     {
 
     }
+
+    public function login($email, $password)
+    {
+        // Check if email is valid
+        if (Validator::validateEmail($email) == false) {
+            $this->errors['email'] = "Email address is not valid.";
+        }
+
+        // Check if email exists in database
+        $email_query = "SELECT EXISTS
+        (SELECT 1 FROM Account WHERE email = ?)
+        ";
+        $email_statement = $this->connection->prepare($email_query);
+        $email_statement->bind_param("s", $email);
+        $email_statement->execute();
+        $email_statement->bind_result($email_exists);
+        $email_statement->fetch();
+        $email_statement->close();
+
+        if (!$email_exists) {
+            $this->errors['email_not_found'] = "Email address not found.";
+        }
+
+        // If there are errors, return the response
+        if (count($this->errors) > 0) {
+            $this->response['success'] = false;
+            $this->response['errors'] = $this->errors;
+            return $this->response;
+        }
+
+        // Get the hashed password for the email
+        $password_query = "SELECT password FROM Account WHERE email = ?";
+        $password_statement = $this->connection->prepare($password_query);
+        $password_statement->bind_param("s", $email);
+        $password_statement->execute();
+        $password_statement->bind_result($hashed_password);
+        $password_statement->fetch();
+        $password_statement->close();
+
+        // Verify the password
+        if (password_verify($password, $hashed_password)) {
+            $this->response['success'] = true;
+        } else {
+            $this->response['success'] = false;
+            $this->errors['password'] = "Invalid password.";
+            $this->response['errors'] = $this->errors;
+        }
+
+        return $this->response;
+    }
 }
 ?>

@@ -5,7 +5,7 @@ use \Exception;
 use Adam\AwPhpProject\App;
 
 class Database extends App {
-    protected $connection;
+    public $connection;
     protected function __construct()
     {
         try {

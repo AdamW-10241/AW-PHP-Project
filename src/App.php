@@ -13,7 +13,6 @@ class App {
     {
         // Class constructorr
         $this -> loadConfig();
-        SessionManager::init();
     }
 
     private function loadConfig()
@@ -22,7 +21,7 @@ class App {
             $app_dir = getcwd();
             $dotenv = Dotenv::createImmutable($app_dir);
             $dotenv->load();
-            $this -> site_name = $_ENV['SITE_NAME'];
+            $this -> site_name = $_ENV['SITENAME'];
             date_default_timezone_set( $_ENV['TIMEZONE'] );
         }
         catch (Exception $exception) {
