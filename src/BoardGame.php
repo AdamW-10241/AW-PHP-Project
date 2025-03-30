@@ -134,7 +134,7 @@ class BoardGame extends Database {
                 SELECT 
                     r.*,
                     u.email as user_email
-                FROM reviews r
+                FROM Review r
                 JOIN Account u ON r.user_id = u.id
                 WHERE r.game_id = ?
                 ORDER BY r.created_at DESC
@@ -158,7 +158,7 @@ class BoardGame extends Database {
                 r.*,
                 u.email as user_name,
                 g.title as game_title
-            FROM reviews r
+            FROM Review r
             JOIN Account u ON r.user_id = u.id
             JOIN BoardGame g ON r.game_id = g.id
             ORDER BY r.created_at DESC
@@ -192,7 +192,7 @@ class BoardGame extends Database {
 
     public function addReview($user_id, $game_id, $rating, $comment) {
         // Check if user already reviewed this game
-        $check_query = "SELECT id FROM reviews WHERE user_id = ? AND game_id = ?";
+        $check_query = "SELECT id FROM Review WHERE user_id = ? AND game_id = ?";
         $check_stmt = $this->connection->prepare($check_query);
         $check_stmt->bind_param("ii", $user_id, $game_id);
         $check_stmt->execute();
@@ -202,7 +202,7 @@ class BoardGame extends Database {
 
         // Add the review
         $insert_query = "
-            INSERT INTO reviews (user_id, game_id, rating, comment, created_at)
+            INSERT INTO Review (user_id, game_id, rating, comment, created_at)
             VALUES (?, ?, ?, ?, NOW())
         ";
         $insert_stmt = $this->connection->prepare($insert_query);
@@ -212,7 +212,7 @@ class BoardGame extends Database {
 
     public function updateReview($review_id, $user_id, $rating, $comment) {
         // Verify the review belongs to the user
-        $check_query = "SELECT id FROM reviews WHERE id = ? AND user_id = ?";
+        $check_query = "SELECT id FROM Review WHERE id = ? AND user_id = ?";
         $check_stmt = $this->connection->prepare($check_query);
         $check_stmt->bind_param("ii", $review_id, $user_id);
         $check_stmt->execute();
@@ -222,7 +222,7 @@ class BoardGame extends Database {
 
         // Update the review
         $update_query = "
-            UPDATE reviews 
+            UPDATE Review 
             SET rating = ?, comment = ?
             WHERE id = ? AND user_id = ?
         ";
@@ -233,7 +233,7 @@ class BoardGame extends Database {
 
     public function deleteReview($review_id, $user_id) {
         // Verify the review belongs to the user
-        $check_query = "SELECT id FROM reviews WHERE id = ? AND user_id = ?";
+        $check_query = "SELECT id FROM Review WHERE id = ? AND user_id = ?";
         $check_stmt = $this->connection->prepare($check_query);
         $check_stmt->bind_param("ii", $review_id, $user_id);
         $check_stmt->execute();
@@ -242,7 +242,7 @@ class BoardGame extends Database {
         }
 
         // Delete the review
-        $delete_query = "DELETE FROM reviews WHERE id = ? AND user_id = ?";
+        $delete_query = "DELETE FROM Review WHERE id = ? AND user_id = ?";
         $delete_stmt = $this->connection->prepare($delete_query);
         $delete_stmt->bind_param("ii", $review_id, $user_id);
         return $delete_stmt->execute();
@@ -253,7 +253,7 @@ class BoardGame extends Database {
             SELECT 
                 r.*,
                 u.email as user_name
-            FROM reviews r
+            FROM Review r
             JOIN Account u ON r.user_id = u.id
             WHERE r.game_id = ?
             ORDER BY r.created_at DESC
@@ -270,7 +270,7 @@ class BoardGame extends Database {
     }
 
     public function hasUserReviewed($user_id, $game_id) {
-        $check_query = "SELECT id FROM reviews WHERE user_id = ? AND game_id = ?";
+        $check_query = "SELECT id FROM Review WHERE user_id = ? AND game_id = ?";
         $check_stmt = $this->connection->prepare($check_query);
         $check_stmt->bind_param("ii", $user_id, $game_id);
         $check_stmt->execute();

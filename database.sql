@@ -1,11 +1,12 @@
 USE mariadb;
 
 -- Drop existing tables if they exist
-DROP TABLE IF EXISTS comments;
-DROP TABLE IF EXISTS blog_posts;
-DROP TABLE IF EXISTS favorites;
-DROP TABLE IF EXISTS reviews;
-DROP TABLE IF EXISTS news;
+DROP TABLE IF EXISTS Newsletter_Subscriber;
+DROP TABLE IF EXISTS Comment;
+DROP TABLE IF EXISTS Blog_Post;
+DROP TABLE IF EXISTS Favourite;
+DROP TABLE IF EXISTS Review;
+DROP TABLE IF EXISTS News;
 -- Drop junction tables first
 DROP TABLE IF EXISTS BoardGame_Artist;
 DROP TABLE IF EXISTS BoardGame_Designer;
@@ -99,8 +100,8 @@ CREATE TABLE IF NOT EXISTS BoardGame_Artist (
     FOREIGN KEY (artist_id) REFERENCES Artist(artist_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create news table
-CREATE TABLE IF NOT EXISTS news (
+-- Create News table
+CREATE TABLE IF NOT EXISTS News (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
@@ -109,8 +110,8 @@ CREATE TABLE IF NOT EXISTS news (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Create reviews table if it doesn't exist
-CREATE TABLE IF NOT EXISTS reviews (
+-- Create Review table if it doesn't exist
+CREATE TABLE IF NOT EXISTS Review (
     id INT AUTO_INCREMENT PRIMARY KEY,
     game_id INT NOT NULL,
     user_id INT NOT NULL,
@@ -121,8 +122,8 @@ CREATE TABLE IF NOT EXISTS reviews (
     FOREIGN KEY (user_id) REFERENCES Account(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create favorites table
-CREATE TABLE IF NOT EXISTS favorites (
+-- Create Favourite table
+CREATE TABLE IF NOT EXISTS Favourite (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     game_id INT NOT NULL,
@@ -132,8 +133,8 @@ CREATE TABLE IF NOT EXISTS favorites (
     UNIQUE KEY unique_favorite (user_id, game_id)
 );
 
--- Create blog_posts table
-CREATE TABLE IF NOT EXISTS blog_posts (
+-- Create Blog_Post table
+CREATE TABLE IF NOT EXISTS Blog_Post (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
@@ -144,8 +145,8 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     FOREIGN KEY (author_id) REFERENCES Account(id) ON DELETE CASCADE
 );
 
--- Create comments table
-CREATE TABLE IF NOT EXISTS comments (
+-- Create Comment table
+CREATE TABLE IF NOT EXISTS Comment (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     post_id INT NOT NULL,
@@ -155,8 +156,8 @@ CREATE TABLE IF NOT EXISTS comments (
     FOREIGN KEY (post_id) REFERENCES blog_posts(id) ON DELETE CASCADE
 );
 
--- Create newsletter_subscribers table
-CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+-- Create Newsletter_Subscriber table
+CREATE TABLE IF NOT EXISTS Newsletter_Subscriber (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(100) NOT NULL UNIQUE,
     subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -358,8 +359,8 @@ VALUES
     (23, 20), -- Exploding Kittens - Matthew Inman
     (24, 21); -- Archipelago - Vincent Boulanger
 
--- Create news table
-CREATE TABLE IF NOT EXISTS news (
+-- Create News table
+CREATE TABLE IF NOT EXISTS News (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
@@ -368,8 +369,8 @@ CREATE TABLE IF NOT EXISTS news (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Create reviews table if it doesn't exist
-CREATE TABLE IF NOT EXISTS reviews (
+-- Create Review table if it doesn't exist
+CREATE TABLE IF NOT EXISTS Review (
     id INT AUTO_INCREMENT PRIMARY KEY,
     game_id INT NOT NULL,
     user_id INT NOT NULL,
@@ -380,8 +381,8 @@ CREATE TABLE IF NOT EXISTS reviews (
     FOREIGN KEY (user_id) REFERENCES Account(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create favorites table
-CREATE TABLE IF NOT EXISTS favorites (
+-- Create Favourite table
+CREATE TABLE IF NOT EXISTS Favourite (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     game_id INT NOT NULL,
@@ -391,8 +392,8 @@ CREATE TABLE IF NOT EXISTS favorites (
     UNIQUE KEY unique_favorite (user_id, game_id)
 );
 
--- Create blog_posts table
-CREATE TABLE IF NOT EXISTS blog_posts (
+-- Create Blog_Post table
+CREATE TABLE IF NOT EXISTS Blog_Post (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
@@ -403,19 +404,19 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     FOREIGN KEY (author_id) REFERENCES Account(id) ON DELETE CASCADE
 );
 
--- Create comments table
-CREATE TABLE IF NOT EXISTS comments (
+-- Create Comment table
+CREATE TABLE IF NOT EXISTS Comment (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     post_id INT NOT NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES Account(id) ON DELETE CASCADE,
-    FOREIGN KEY (post_id) REFERENCES blog_posts(id) ON DELETE CASCADE
+    FOREIGN KEY (post_id) REFERENCES Blog_Post(id) ON DELETE CASCADE
 );
 
--- Create newsletter_subscribers table
-CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+-- Create Newsletter_Subscriber table
+CREATE TABLE IF NOT EXISTS Newsletter_Subscriber (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(100) NOT NULL UNIQUE,
     subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
