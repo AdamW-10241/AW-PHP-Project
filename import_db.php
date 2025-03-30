@@ -66,7 +66,13 @@ try {
         'BoardGame' => $pdo->query("SELECT COUNT(*) FROM BoardGame")->fetchColumn(),
         'Publisher' => $pdo->query("SELECT COUNT(*) FROM Publisher")->fetchColumn(),
         'Designer' => $pdo->query("SELECT COUNT(*) FROM Designer")->fetchColumn(),
-        'Artist' => $pdo->query("SELECT COUNT(*) FROM Artist")->fetchColumn()
+        'Artist' => $pdo->query("SELECT COUNT(*) FROM Artist")->fetchColumn(),
+        'News' => $pdo->query("SELECT COUNT(*) FROM News")->fetchColumn(),
+        'Review' => $pdo->query("SELECT COUNT(*) FROM Review")->fetchColumn(),
+        'Favourite' => $pdo->query("SELECT COUNT(*) FROM Favourite")->fetchColumn(),
+        'Blog_Post' => $pdo->query("SELECT COUNT(*) FROM Blog_Post")->fetchColumn(),
+        'Comment' => $pdo->query("SELECT COUNT(*) FROM Comment")->fetchColumn(),
+        'Newsletter_Subscriber' => $pdo->query("SELECT COUNT(*) FROM Newsletter_Subscriber")->fetchColumn()
     ];
 
     echo "\nSample data imported:\n";
