@@ -11,13 +11,6 @@ A PHP-based web application for managing and reviewing board games.
 - News and blog sections
 - Newsletter subscription
 
-## Requirements
-
-- PHP 8.0 or higher
-- MariaDB 10.4 or higher
-- Composer for PHP dependencies
-- Web server (Apache/Nginx)
-
 ## Installation
 
 1. Clone the repository
@@ -75,10 +68,10 @@ Before you begin, make sure you have:
    ```
    Edit the `.env` file with your preferred settings. For Docker, these defaults work well:
    ```ini
-   DBHOST="db"
-   DBUSER="mariadb"
-   DBPASSWORD="mariadb"
-   DBNAME="mariadb"
+   DB_HOST="db"
+   DB_USER="mariadb"
+   DB_PASS="mariadb"
+   DB_NAME="mariadb"
    ```
 
 2. **Install Dependencies**
@@ -110,7 +103,7 @@ The site will be live at `http://localhost` with phpMyAdmin at `http://localhost
 ## What's Included
 
 ### Sample Data
-We've pre-loaded the database with 12 popular games:
+We've pre-loaded the database with 24 popular games:
 
 Each game has:
 - High-quality cover art
@@ -151,7 +144,7 @@ A PHP project for **Advanced Web** - Semester 1 2025.
 Developed by Adam Williams & Aleksei Perov.
 
 # Configuration
-Rename .env.dist to .env and change values to suit your environment.
+Rename .env.example to .env and change values to suit your environment.
 
 # Docker Development Setup
 The project includes a Docker development environment in the `.devcontainer` directory. There are two ways to run it:

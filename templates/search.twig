@@ -1,8 +1,6 @@
-<!doctype html>
-<html lang="en">
-{% include 'head.twig' %}
-<body>
-    {% include 'navigation.twig' %}
+{% extends "base.twig" %}
+
+{% block content %}
     <div class="container mt-5">
         <h1 class="mb-4">Search Results</h1>
         
@@ -56,6 +54,4 @@
             </div>
         {% endif %}
     </div>
-    {% include 'footer.twig' %}
-</body>
-</html> 
+{% endblock %}
