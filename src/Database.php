@@ -8,20 +8,23 @@ class Database extends App {
     public $connection;
     protected function __construct()
     {
+        // Call parent constructor to load environment variables
+        parent::__construct();
+        
         try {
             if (
-                defined('DB_HOST') &&
-                defined('DB_USER') &&
-                defined('DB_PASS') &&
-                defined('DB_NAME')
+                $_ENV['DBHOST'] &&
+                $_ENV['DBUSER'] &&
+                $_ENV['DBPASSWORD'] &&
+                $_ENV['DBNAME']
             ) {
                 // Initialise connection
                 try {
                     $this->connection = mysqli_connect(
-                        DB_HOST,
-                        DB_USER,
-                        DB_PASS,
-                        DB_NAME
+                        $_ENV['DBHOST'],
+                        $_ENV['DBUSER'],
+                        $_ENV['DBPASSWORD'],
+                        $_ENV['DBNAME']
                     );
                     if (!$this->connection) {
                         throw new Exception("Database connection can not be created.");

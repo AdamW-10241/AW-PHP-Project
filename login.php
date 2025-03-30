@@ -6,6 +6,7 @@ require_once 'session_helper.php';
 
 use Twig\Loader\FilesystemLoader;
 use Twig\Environment;
+use Adam\AwPhpProject\Account;
 
 // Initialize Twig
 $loader = new FilesystemLoader('templates');
@@ -30,14 +31,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         $account = new Account();
-        $account->login($email, $password);
+        $result = $account->login($email, $password);
         
-        // Set session and redirect
-        $_SESSION['email'] = $email;
-        header('Location: /index.php');
-        exit();
+        if ($result['success'] === true) {
+            // Set session and redirect only if login was successful
+            $_SESSION['email'] = $email;
+            header('Location: /index.php');
+            exit();
+        } else {
+            // Handle login errors
+            if (isset($result['errors'])) {
+                $data['errors'] = array_values($result['errors']);
+            } else {
+                $data['errors'] = ['Invalid email or password.'];
+            }
+        }
     } catch (Exception $e) {
-        $data['error'] = $e->getMessage();
+        $data['errors'] = [$e->getMessage()];
     }
 }
 

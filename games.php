@@ -14,7 +14,7 @@ $items = $boardgame->get();
 
 // Checking if the user is logged in
 $isauthenticated = false;
-if (isset($_SESSION['email'])) {
+if (isset($_SESSION['email']) && !empty($_SESSION['email'])) {
     $isauthenticated = true;
 }
 
