@@ -31,37 +31,70 @@ if ($query) {
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
         );
 
+        // Debug: Print the search query
+        echo "<!-- Debug: Searching for: " . htmlspecialchars($query) . " -->\n";
+
         $stmt = $db->prepare("
             SELECT 
                 BoardGame.*,
                 GROUP_CONCAT(DISTINCT Publisher.name) as publishers,
-                GROUP_CONCAT(DISTINCT Designer.name) as designers,
-                GROUP_CONCAT(DISTINCT Artist.name) as artists
+                GROUP_CONCAT(DISTINCT CONCAT(Designer.first_name, ' ', Designer.last_name)) as designers,
+                GROUP_CONCAT(DISTINCT CONCAT(Artist.first_name, ' ', Artist.last_name)) as artists
             FROM BoardGame
-            LEFT JOIN BoardGame_Publisher ON BoardGame.id = BoardGame_Publisher.game_id
-            LEFT JOIN Publisher ON BoardGame_Publisher.publisher_id = Publisher.id
-            LEFT JOIN BoardGame_Designer ON BoardGame.id = BoardGame_Designer.game_id
-            LEFT JOIN Designer ON BoardGame_Designer.designer_id = Designer.id
-            LEFT JOIN BoardGame_Artist ON BoardGame.id = BoardGame_Artist.game_id
-            LEFT JOIN Artist ON BoardGame_Artist.artist_id = Artist.id
+            LEFT JOIN BoardGame_Publisher ON BoardGame.id = BoardGame_Publisher.boardgame_id
+            LEFT JOIN Publisher ON BoardGame_Publisher.publisher_id = Publisher.publisher_id
+            LEFT JOIN BoardGame_Designer ON BoardGame.id = BoardGame_Designer.boardgame_id
+            LEFT JOIN Designer ON BoardGame_Designer.designer_id = Designer.designer_id
+            LEFT JOIN BoardGame_Artist ON BoardGame.id = BoardGame_Artist.boardgame_id
+            LEFT JOIN Artist ON BoardGame_Artist.artist_id = Artist.artist_id
             WHERE BoardGame.visible = 1
-            AND (BoardGame.title LIKE ? OR BoardGame.description LIKE ?)
-            GROUP BY BoardGame.id
-            ORDER BY BoardGame.rating DESC
+            AND (
+                LOWER(BoardGame.title) LIKE LOWER(?) 
+                OR LOWER(BoardGame.description) LIKE LOWER(?)
+                OR LOWER(Publisher.name) LIKE LOWER(?)
+                OR LOWER(CONCAT(Designer.first_name, ' ', Designer.last_name)) LIKE LOWER(?)
+                OR LOWER(CONCAT(Artist.first_name, ' ', Artist.last_name)) LIKE LOWER(?)
+            )
+            GROUP BY 
+                BoardGame.id,
+                BoardGame.title,
+                BoardGame.tagline,
+                BoardGame.year,
+                BoardGame.description,
+                BoardGame.player_range,
+                BoardGame.age_range,
+                BoardGame.playtime_range,
+                BoardGame.image,
+                BoardGame.tags,
+                BoardGame.visible,
+                BoardGame.created_at
+            ORDER BY BoardGame.title ASC
         ");
 
         $searchTerm = "%{$query}%";
-        $stmt->execute([$searchTerm, $searchTerm]);
+        $stmt->execute([$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Update image paths
+        // Debug: Print the SQL query and results count
+        echo "<!-- Debug: Found " . count($results) . " results -->\n";
+        echo "<!-- Debug: SQL Query: " . htmlspecialchars($stmt->queryString) . " -->\n";
+        echo "<!-- Debug: Search term: " . htmlspecialchars($searchTerm) . " -->\n";
+
+        // Debug: Print first result if any
+        if (count($results) > 0) {
+            echo "<!-- Debug: First result: " . htmlspecialchars(print_r($results[0], true)) . " -->\n";
+        }
+
+        // Update image paths to include the correct directory
         foreach ($results as &$game) {
-            $game['image'] = '/images/games/' . $game['image'];
+            $game['image'] = 'assets/cover_images/' . $game['image'];
         }
 
         $data['results'] = $results;
     } catch (PDOException $e) {
         $data['error'] = "Error searching games: " . $e->getMessage();
+        // Debug: Print any errors
+        echo "<!-- Debug: Error: " . htmlspecialchars($e->getMessage()) . " -->\n";
     }
 }
 
