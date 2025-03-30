@@ -2,20 +2,12 @@
 
 namespace Adam\AwPhpProject;
 
-class Game {
+class Game extends Database {
     private $db;
 
     public function __construct() {
-        try {
-            $this->db = new \PDO(
-                "mysql:host=db;dbname=mariadb;charset=utf8mb4",
-                "mariadb",
-                "mariadb",
-                [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
-            );
-        } catch (\PDOException $e) {
-            die("Connection failed: " . $e->getMessage());
-        }
+        parent::__construct();
+        $this->db = $this->connection;
     }
 
     /**

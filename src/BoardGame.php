@@ -247,5 +247,26 @@ class BoardGame extends Database {
         $delete_stmt->bind_param("ii", $review_id, $user_id);
         return $delete_stmt->execute();
     }
+
+    public function getReviewsForGame($game_id) {
+        $reviews_query = "
+            SELECT 
+                r.*,
+                u.email as user_name
+            FROM reviews r
+            JOIN Account u ON r.user_id = u.id
+            WHERE r.game_id = ?
+            ORDER BY r.created_at DESC
+        ";
+        $statement = $this->connection->prepare($reviews_query);
+        $statement->bind_param("i", $game_id);
+        $statement->execute();
+        $result = $statement->get_result();
+        $reviews = [];
+        while ($row = $result->fetch_assoc()) {
+            $reviews[] = $row;
+        }
+        return $reviews;
+    }
 }
 ?>

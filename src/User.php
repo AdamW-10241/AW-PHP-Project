@@ -2,20 +2,12 @@
 
 namespace Adam\AwPhpProject;
 
-class User {
+class User extends Database {
     private $db;
 
     public function __construct() {
-        try {
-            $this->db = new \PDO(
-                "mysql:host=db;dbname=mariadb;charset=utf8mb4",
-                "mariadb",
-                "mariadb",
-                [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
-            );
-        } catch (\PDOException $e) {
-            die("Connection failed: " . $e->getMessage());
-        }
+        parent::__construct();
+        $this->db = $this->connection;
     }
 
     /**
@@ -26,8 +18,10 @@ class User {
     public function getUserByEmail($email) {
         $sql = "SELECT * FROM Account WHERE email = ?";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$email]);
-        return $stmt->fetch(\PDO::FETCH_ASSOC);
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc();
     }
 
     /**
@@ -38,8 +32,11 @@ class User {
     public function emailExists($email) {
         $sql = "SELECT COUNT(*) FROM Account WHERE email = ?";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$email]);
-        return $stmt->fetchColumn() > 0;
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_row();
+        return $row[0] > 0;
     }
 
     /**
@@ -51,9 +48,11 @@ class User {
     public function verifyPassword($email, $password) {
         $sql = "SELECT password FROM Account WHERE email = ?";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$email]);
-        $hashed_password = $stmt->fetchColumn();
-        return password_verify($password, $hashed_password);
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        return password_verify($password, $row['password']);
     }
 
     /**
@@ -65,7 +64,8 @@ class User {
     public function updateEmail($old_email, $new_email) {
         $sql = "UPDATE Account SET email = ? WHERE email = ?";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([$new_email, $old_email]);
+        $stmt->bind_param("ss", $new_email, $old_email);
+        return $stmt->execute();
     }
 
     /**
@@ -78,6 +78,7 @@ class User {
         $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
         $sql = "UPDATE Account SET password = ? WHERE email = ?";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([$hashed_password, $email]);
+        $stmt->bind_param("ss", $hashed_password, $email);
+        return $stmt->execute();
     }
 } 
