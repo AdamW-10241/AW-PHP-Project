@@ -33,14 +33,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         $account = new Account();
-        $account->create($email, $password);
+        $result = $account->create($email, $password);
         
-        // Set session and redirect
-        $_SESSION['email'] = $email;
-        header('Location: /index.php');
-        exit();
+        if ($result['success'] === 1) {
+            // Set session and redirect
+            $_SESSION['email'] = $email;
+            header('Location: /index.php');
+            exit();
+        } else {
+            // Handle errors from Account::create
+            if (isset($result['errors'])) {
+                $data['errors'] = array_values($result['errors']);
+            } else {
+                $data['errors'] = ['An error occurred during registration.'];
+            }
+        }
     } catch (Exception $e) {
-        $data['error'] = $e->getMessage();
+        $data['errors'] = [$e->getMessage()];
     }
 }
 
