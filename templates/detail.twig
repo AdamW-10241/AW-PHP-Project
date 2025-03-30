@@ -1,18 +1,16 @@
-<!doctype html>
-<html lang="en">
-{% include 'head.twig' %}
-<body class="d-flex flex-column min-vh-100">
-    {% include 'navigation.twig' %}
-    <main class="flex-grow-1">
-        <div class="container mt-5">
-            <div class="text-center mb-5">
-                <h1 class="display-4 fw-bold text-primary mb-3">Game Details</h1>
-                <p class="lead text-muted">Explore the world of {{ detail.title }}</p>
-                <div class="d-flex justify-content-center">
-                    <div class="border-bottom border-primary" style="width: 100px;"></div>
-                </div>
+{% extends "base.twig" %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="text-center mb-3">
+            <h1 class="display-4 fw-bold text-primary mb-3">Game Details</h1>
+            <p class="lead text-muted">Explore the world of {{ detail.title }}</p>
+            <div class="d-flex justify-content-center">
+                <div class="border-bottom border-primary" style="width: 100px;"></div>
             </div>
         </div>
+    </div>
+    <main class="flex-grow-1">
         <div class="container mb-5">
             <div class="row">
                 <div class="col-md-6">
@@ -180,7 +178,6 @@
             </div>
         </div>
     </main>
-    {% include 'footer.twig' %}
 
     <!-- Delete Confirmation Modal -->
     <div class="modal fade" id="deleteReviewModal" tabindex="-1" aria-labelledby="deleteReviewModalLabel" aria-hidden="true">
@@ -238,5 +235,4 @@
     });
     </script>
     {% endblock %}
-</body>
-</html>
+{% endblock %}
