@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'config.php';
 require_once 'vendor/autoload.php';
 require_once 'session_helper.php';
 
@@ -16,10 +17,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isLoggedIn()) {
 
     if ($game_id && $rating && $review_text) {
         try {
+            // Validate rating
+            $rating = (int)$rating;
+            if ($rating < 1 || $rating > 5) {
+                throw new Exception("Rating must be between 1 and 5");
+            }
+
             $db = new PDO(
-                "mysql:host=db;dbname=mariadb;charset=utf8mb4",
-                "mariadb",
-                "mariadb",
+                "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
+                DB_USER,
+                DB_PASS,
                 [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
             );
 
@@ -30,6 +37,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isLoggedIn()) {
             
             if (!$user) {
                 throw new Exception("User not found");
+            }
+
+            // Check if user already reviewed this game
+            $stmt = $db->prepare("SELECT id FROM reviews WHERE user_id = ? AND game_id = ?");
+            $stmt->execute([$user['id'], $game_id]);
+            if ($stmt->fetch()) {
+                throw new Exception("You have already reviewed this game");
             }
 
             // Save review
@@ -45,10 +59,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isLoggedIn()) {
                 $review_text
             ]);
 
-            $redirect = true;
+            // Redirect after successful submission
+            header("Location: reviews.php");
+            exit;
         } catch (Exception $e) {
             $error = "Error submitting review: " . $e->getMessage();
         }
+    } else {
+        $error = "Please fill in all fields";
     }
 }
 
@@ -58,9 +76,9 @@ $twig = new Environment($loader);
 
 try {
     $db = new PDO(
-        "mysql:host=db;dbname=mariadb;charset=utf8mb4",
-        "mariadb",
-        "mariadb",
+        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
+        DB_USER,
+        DB_PASS,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 

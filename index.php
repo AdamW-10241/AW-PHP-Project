@@ -1,6 +1,7 @@
 <?php
 // Start session
 session_start();
+require_once 'config.php';
 require_once 'vendor/autoload.php';
 require_once 'session_helper.php';
 
@@ -13,9 +14,9 @@ $twig = new Environment($loader);
 
 // Connect to database
 $db = new PDO(
-    "mysql:host=db;dbname=mariadb;charset=utf8mb4",
-    "mariadb",
-    "mariadb",
+    "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
+    DB_USER,
+    DB_PASS,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );
 
@@ -24,18 +25,18 @@ $stmt = $db->query("
     SELECT 
         BoardGame.*,
         GROUP_CONCAT(DISTINCT Publisher.name) as publishers,
-        GROUP_CONCAT(DISTINCT Designer.name) as designers,
-        GROUP_CONCAT(DISTINCT Artist.name) as artists
+        GROUP_CONCAT(DISTINCT CONCAT(Designer.first_name, ' ', Designer.last_name)) as designers,
+        GROUP_CONCAT(DISTINCT CONCAT(Artist.first_name, ' ', Artist.last_name)) as artists
     FROM BoardGame
-    LEFT JOIN BoardGame_Publisher ON BoardGame.id = BoardGame_Publisher.game_id
-    LEFT JOIN Publisher ON BoardGame_Publisher.publisher_id = Publisher.id
-    LEFT JOIN BoardGame_Designer ON BoardGame.id = BoardGame_Designer.game_id
-    LEFT JOIN Designer ON BoardGame_Designer.designer_id = Designer.id
-    LEFT JOIN BoardGame_Artist ON BoardGame.id = BoardGame_Artist.game_id
-    LEFT JOIN Artist ON BoardGame_Artist.artist_id = Artist.id
+    LEFT JOIN BoardGame_Publisher ON BoardGame.id = BoardGame_Publisher.boardgame_id
+    LEFT JOIN Publisher ON BoardGame_Publisher.publisher_id = Publisher.publisher_id
+    LEFT JOIN BoardGame_Designer ON BoardGame.id = BoardGame_Designer.boardgame_id
+    LEFT JOIN Designer ON BoardGame_Designer.designer_id = Designer.designer_id
+    LEFT JOIN BoardGame_Artist ON BoardGame.id = BoardGame_Artist.boardgame_id
+    LEFT JOIN Artist ON BoardGame_Artist.artist_id = Artist.artist_id
     WHERE BoardGame.visible = 1
     GROUP BY BoardGame.id
-    ORDER BY BoardGame.rating DESC
+    ORDER BY BoardGame.created_at DESC
     LIMIT 1
 ");
 $featured_game = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -45,18 +46,18 @@ $stmt = $db->query("
     SELECT 
         BoardGame.*,
         GROUP_CONCAT(DISTINCT Publisher.name) as publishers,
-        GROUP_CONCAT(DISTINCT Designer.name) as designers,
-        GROUP_CONCAT(DISTINCT Artist.name) as artists
+        GROUP_CONCAT(DISTINCT CONCAT(Designer.first_name, ' ', Designer.last_name)) as designers,
+        GROUP_CONCAT(DISTINCT CONCAT(Artist.first_name, ' ', Artist.last_name)) as artists
     FROM BoardGame
-    LEFT JOIN BoardGame_Publisher ON BoardGame.id = BoardGame_Publisher.game_id
-    LEFT JOIN Publisher ON BoardGame_Publisher.publisher_id = Publisher.id
-    LEFT JOIN BoardGame_Designer ON BoardGame.id = BoardGame_Designer.game_id
-    LEFT JOIN Designer ON BoardGame_Designer.designer_id = Designer.id
-    LEFT JOIN BoardGame_Artist ON BoardGame.id = BoardGame_Artist.game_id
-    LEFT JOIN Artist ON BoardGame_Artist.artist_id = Artist.id
+    LEFT JOIN BoardGame_Publisher ON BoardGame.id = BoardGame_Publisher.boardgame_id
+    LEFT JOIN Publisher ON BoardGame_Publisher.publisher_id = Publisher.publisher_id
+    LEFT JOIN BoardGame_Designer ON BoardGame.id = BoardGame_Designer.boardgame_id
+    LEFT JOIN Designer ON BoardGame_Designer.designer_id = Designer.designer_id
+    LEFT JOIN BoardGame_Artist ON BoardGame.id = BoardGame_Artist.boardgame_id
+    LEFT JOIN Artist ON BoardGame_Artist.artist_id = Artist.artist_id
     WHERE BoardGame.visible = 1
     GROUP BY BoardGame.id
-    ORDER BY BoardGame.rating DESC
+    ORDER BY BoardGame.created_at DESC
     LIMIT 4
 ");
 $popular_games = $stmt->fetchAll(PDO::FETCH_ASSOC);

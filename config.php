@@ -6,10 +6,14 @@ $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
 // Database configuration
-define('DB_HOST', 'db');
-define('DB_USER', 'mariadb');
-define('DB_PASS', 'mariadb');
-define('DB_NAME', 'mariadb');
+define('DB_HOST', $_ENV['DB_HOST']);
+define('DB_NAME', $_ENV['DB_NAME']);
+define('DB_USER', $_ENV['DB_USER']);
+define('DB_PASS', $_ENV['DB_PASS']);
+
+// Application configuration
+define('APP_NAME', $_ENV['SITENAME'] ?? 'Board Game Collection');
+define('APP_URL', 'http://localhost:8080');
 
 // Function to get database connection
 function getDBConnection() {
@@ -42,5 +46,5 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Site configuration
-define('SITE_NAME', 'Board Game Hub');
+define('SITE_NAME', $_ENV['SITENAME'] ?? 'Board Game Hub');
 define('SITE_DESCRIPTION', 'Your ultimate destination for board game enthusiasts'); 

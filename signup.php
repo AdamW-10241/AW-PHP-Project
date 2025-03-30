@@ -1,11 +1,14 @@
 <?php 
 // Start session
 session_start();
+require_once 'config.php';
 require_once 'vendor/autoload.php';
 require_once 'session_helper.php';
+require_once 'src/Account.php';
 
 use Twig\Loader\FilesystemLoader;
 use Twig\Environment;
+use Adam\AwPhpProject\Account;
 
 // Initialize Twig
 $loader = new FilesystemLoader('templates');

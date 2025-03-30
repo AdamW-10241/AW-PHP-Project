@@ -1,6 +1,7 @@
 <?php
 // Start session
 session_start();
+require_once 'config.php';
 require_once 'vendor/autoload.php';
 require_once 'session_helper.php';
 
@@ -25,9 +26,9 @@ $data = [
 if ($query) {
     try {
         $db = new PDO(
-            "mysql:host=db;dbname=mariadb;charset=utf8mb4",
-            "mariadb",
-            "mariadb",
+            "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
+            DB_USER,
+            DB_PASS,
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
         );
 
