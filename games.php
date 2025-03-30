@@ -26,5 +26,6 @@ $template = $twig->load('games.twig');
 // Render the output
 echo $template->render([
     'items' => $items,
-    'loggedin' => $isauthenticated
+    'loggedin' => $isauthenticated,
+    'current_page' => 'games'
 ]); 

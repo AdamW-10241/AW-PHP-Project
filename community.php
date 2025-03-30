@@ -21,7 +21,8 @@ $template = $twig -> load( 'community.twig' );
 
 // Render the output
 echo $template -> render( [
-    'loggedin' => $isauthenticated
+    'loggedin' => $isauthenticated,
+    'current_page' => 'community'
 ] );
 ?>
 

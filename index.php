@@ -97,7 +97,8 @@ echo $twig->render('index.twig', [
     'loggedin' => isLoggedIn(),
     'featured_game' => $featured_game,
     'popular_games' => $popular_games,
-    'news' => $news
+    'news' => $news,
+    'current_page' => 'home'
 ]);
 ?>
 

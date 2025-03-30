@@ -52,7 +52,8 @@ echo $template->render([
     'website_name' => $site_name,
     'errors' => $form_errors,
     'success' => $form_success,
-    'loggedin' => $isauthenticated
+    'loggedin' => $isauthenticated,
+    'current_page' => 'contact'
 ]);
 ?>
 

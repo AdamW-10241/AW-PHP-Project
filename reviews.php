@@ -124,7 +124,8 @@ try {
         'games' => $games,
         'error' => $error,
         'redirect' => $redirect,
-        'session_email' => $_SESSION['email'] ?? null
+        'session_email' => $_SESSION['email'] ?? null,
+        'current_page' => 'reviews'
     ]);
 } catch (Exception $e) {
     die("Error: " . $e->getMessage());

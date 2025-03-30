@@ -15,7 +15,7 @@
 </head>
 <body>
     {# Include navigation #}
-    {% include 'navigation.twig' %}
+    {% include 'navigation.twig' with {'current_page': current_page|default('home')} %}
 
     {# Main content #}
     <main class="container py-4">
