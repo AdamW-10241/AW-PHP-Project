@@ -268,5 +268,14 @@ class BoardGame extends Database {
         }
         return $reviews;
     }
+
+    public function hasUserReviewed($user_id, $game_id) {
+        $check_query = "SELECT id FROM reviews WHERE user_id = ? AND game_id = ?";
+        $check_stmt = $this->connection->prepare($check_query);
+        $check_stmt->bind_param("ii", $user_id, $game_id);
+        $check_stmt->execute();
+        $result = $check_stmt->get_result();
+        return $result->num_rows > 0;
+    }
 }
 ?>

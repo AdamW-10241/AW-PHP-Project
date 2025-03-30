@@ -33,6 +33,20 @@ if ( $_GET['id'] ) {
         // Log error but don't show it to users
         error_log("Error fetching reviews: " . $e->getMessage());
     }
+
+    // Check if user has already reviewed this game
+    $has_reviewed = false;
+    if (isset($_SESSION['email'])) {
+        try {
+            $account = new Account();
+            $user = $account->getUserByEmail($_SESSION['email']);
+            if ($user) {
+                $has_reviewed = $boardgame->hasUserReviewed($user['id'], $_GET['id']);
+            }
+        } catch (Exception $e) {
+            error_log("Error checking user review: " . $e->getMessage());
+        }
+    }
 }
 
 // Handle review submission, editing, and deletion
@@ -147,6 +161,7 @@ echo $template -> render( [
     'loggedin' => $isauthenticated,
     'reviews' => $reviews,
     'error' => $error,
-    'session_email' => $_SESSION['email'] ?? null
+    'session_email' => $_SESSION['email'] ?? null,
+    'has_reviewed' => $has_reviewed
 ] );
 ?>
