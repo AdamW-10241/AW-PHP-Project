@@ -15,5 +15,4 @@ function getLoggedInUser() {
         return $_SESSION['email'];
     }
     return null;
-}
-?> 
+} 

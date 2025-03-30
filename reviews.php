@@ -1,26 +1,102 @@
 <?php
+session_start();
 require_once 'vendor/autoload.php';
+require_once 'session_helper.php';
 
-// Classes used in this stage
-use Adam\AwPhpProject\App;
+use Twig\Loader\FilesystemLoader;
+use Twig\Environment;
 
-// Create app from App class
-$app = new App();
+$redirect = false;
 
-// Checking if the user is logged in
-$isauthenticated = false;
-if ( isset( $_SESSION['email'] ) ) {
-    $isauthenticated = true;
+// Handle POST request for new review
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isLoggedIn()) {
+    $game_id = $_POST['game_id'] ?? null;
+    $rating = $_POST['rating'] ?? null;
+    $review_text = $_POST['review_text'] ?? null;
+
+    if ($game_id && $rating && $review_text) {
+        try {
+            $db = new PDO(
+                "mysql:host=db;dbname=mariadb;charset=utf8mb4",
+                "mariadb",
+                "mariadb",
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+            );
+
+            // Get user ID from email
+            $stmt = $db->prepare("SELECT id FROM Account WHERE email = ?");
+            $stmt->execute([$_SESSION['email']]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$user) {
+                throw new Exception("User not found");
+            }
+
+            // Insert review
+            $stmt = $db->prepare("
+                INSERT INTO reviews (user_id, game_id, rating, comment, created_at)
+                VALUES (?, ?, ?, ?, NOW())
+            ");
+
+            $stmt->execute([
+                $user['id'],
+                $game_id,
+                $rating,
+                $review_text
+            ]);
+
+            // Set redirect flag instead of using header()
+            $redirect = true;
+        } catch (Exception $e) {
+            $error = "Error submitting review: " . $e->getMessage();
+        }
+    }
 }
 
-// Loading the twig template
-$loader = new \Twig\Loader\FilesystemLoader( 'templates' );
-$twig = new \Twig\Environment( $loader );
-$template = $twig -> load( 'reviews.twig' );
+// Load Twig
+$loader = new FilesystemLoader('templates');
+$twig = new Environment($loader);
 
-// Render the output
-echo $template -> render( [
-    'loggedin' => $isauthenticated
-] );
+try {
+    $db = new PDO(
+        "mysql:host=db;dbname=mariadb;charset=utf8mb4",
+        "mariadb",
+        "mariadb",
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
+
+    // Get all reviews with user and game information
+    $stmt = $db->query("
+        SELECT 
+            r.*,
+            u.email as user_name,
+            g.title as game_title
+        FROM reviews r
+        JOIN Account u ON r.user_id = u.id
+        JOIN BoardGame g ON r.game_id = g.id
+        ORDER BY r.created_at DESC
+    ");
+    $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Get all games for the review form
+    $stmt = $db->query("
+        SELECT id, title 
+        FROM BoardGame 
+        WHERE visible = 1 
+        ORDER BY title ASC
+    ");
+    $games = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Render template
+    echo $twig->render('reviews.twig', [
+        'loggedin' => isLoggedIn(),
+        'reviews' => $reviews,
+        'games' => $games,
+        'error' => $error ?? null,
+        'redirect' => $redirect
+    ]);
+} catch (PDOException $e) {
+    die("Error: " . $e->getMessage());
+}
 ?>
 
