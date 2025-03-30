@@ -36,7 +36,7 @@ $stmt = $db->query("
     LEFT JOIN Artist ON BoardGame_Artist.artist_id = Artist.artist_id
     WHERE BoardGame.visible = 1
     GROUP BY BoardGame.id
-    ORDER BY BoardGame.created_at DESC
+    ORDER BY BoardGame.year DESC
     LIMIT 1
 ");
 $featured_game = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -57,7 +57,7 @@ $stmt = $db->query("
     LEFT JOIN Artist ON BoardGame_Artist.artist_id = Artist.artist_id
     WHERE BoardGame.visible = 1
     GROUP BY BoardGame.id
-    ORDER BY BoardGame.created_at DESC
+    ORDER BY BoardGame.year DESC
     LIMIT 4
 ");
 $popular_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
