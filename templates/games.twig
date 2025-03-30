@@ -1,10 +1,8 @@
-<!doctype html>
-<html lang="en">
-{% include 'head.twig' %}
-<body>
-    {% include 'navigation.twig' %}
-    <div class="container mt-5">
-        <div class="text-center mb-5">
+{% extends "base.twig" %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="text-center mb-3">
             <h1 class="display-4 fw-bold text-primary mb-3">Our Board Game Collection</h1>
             <p class="lead text-muted">Discover our curated selection of amazing board games</p>
             <div class="d-flex justify-content-center">
@@ -47,6 +45,4 @@
             {% endfor %}
         </div>
     </div>
-    {% include 'footer.twig' %}
-</body>
-</html> 
+{% endblock %}

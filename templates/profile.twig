@@ -1,8 +1,6 @@
-<!doctype html>
-<html lang="en">
-{% include 'head.twig' %}
-<body>
-    {% include 'navigation.twig' %}
+{% extends "base.twig" %}
+
+{% block content %}
     <div class="container mt-4">
         <div class="text-center mb-3">
             <h1 class="display-4 fw-bold text-primary mb-2">My Profile</h1>
@@ -88,7 +86,6 @@
             </div>
         </div>
     </div>
-    {% include 'footer.twig' %}
     <script>
         // Form validation
         (function () {
@@ -105,5 +102,4 @@
             })
         })()
     </script>
-</body>
-</html> 
+{% endblock %}
