@@ -76,6 +76,10 @@
                                     data-comment="{{ review.comment }}">
                                 <i class="fas fa-edit"></i> Edit Review
                             </button>
+                            <button class="btn btn-sm btn-outline-danger delete-review" 
+                                    data-review-id="{{ review.id }}">
+                                <i class="fas fa-trash"></i> Delete Review
+                            </button>
                         </div>
                         {% endif %}
                     </div>
@@ -116,6 +120,29 @@
     </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteReviewModal" tabindex="-1" aria-labelledby="deleteReviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteReviewModalLabel">Delete Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete your review? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteReviewForm" method="POST" style="display: inline;">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="review_id" id="deleteReviewId">
+                    <button type="submit" class="btn btn-danger">Delete Review</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% if redirect %}
 <script>
     window.location.href = '/reviews.php';
@@ -128,18 +155,28 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle edit button click
     document.querySelectorAll('.edit-review').forEach(button => {
         button.addEventListener('click', function() {
-            const card = this.closest('.card-body');
-            card.querySelector('.review-content').classList.add('d-none');
-            card.querySelector('.edit-form').classList.remove('d-none');
+            const cardBody = this.closest('.card-body');
+            cardBody.querySelector('.review-content').classList.add('d-none');
+            cardBody.querySelector('.edit-form').classList.remove('d-none');
         });
     });
 
     // Handle cancel button click
     document.querySelectorAll('.cancel-edit').forEach(button => {
         button.addEventListener('click', function() {
-            const card = this.closest('.card-body');
-            card.querySelector('.review-content').classList.remove('d-none');
-            card.querySelector('.edit-form').classList.add('d-none');
+            const cardBody = this.closest('.card-body');
+            cardBody.querySelector('.review-content').classList.remove('d-none');
+            cardBody.querySelector('.edit-form').classList.add('d-none');
+        });
+    });
+
+    // Handle delete button click
+    document.querySelectorAll('.delete-review').forEach(button => {
+        button.addEventListener('click', function() {
+            const reviewId = this.dataset.reviewId;
+            document.getElementById('deleteReviewId').value = reviewId;
+            const modal = new bootstrap.Modal(document.getElementById('deleteReviewModal'));
+            modal.show();
         });
     });
 });
