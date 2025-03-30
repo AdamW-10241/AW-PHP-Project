@@ -1,32 +1,40 @@
 {% extends "base.twig" %}
 
 {% block content %}
-<div class="container py-5">
-    <h1 class="display-4 mb-4">Sign Up For An Account</h1>
-       <div class="row mt-4">
-            <div class="col-md-4 offset-md-4">
-                <form method="post" action="/signup.php" novalidate>
-                    {% for item in errors %}
-                        <div class="alert alert-danger" role="alert">
-                            {{ item }}
-                        </div>
-                    {% endfor %}
-                    {% if success %}
-                        <div class="alert alert-success" role="alert">
-                            Account successfully created!
-                        </div>
-                    {% endif %}
-                    <div class="mb-3">
-                        <label class="form-label" for="email">Email Address</label>
-                        <input name="email" id="email" class="form-control" type="email" placeholder="user@domain.com">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Password</label>
-                        <input name="password" id="password" class="form-control" type="password" placeholder="minimum 8 characters">
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Sign up</button>
-                </form>
+    <div class="container mt-4">
+        <div class="text-center mb-3">
+            <h1 class="display-4 fw-bold text-primary mb-3">Sign Up</h1>
+            <p class="lead text-muted">Sign up for a new account</p>
+            <div class="d-flex justify-content-center">
+                <div class="border-bottom border-primary" style="width: 100px;"></div>
             </div>
-       </div>
-</div>
+        </div>
+    </div>
+    <div class="container py-5">
+        <div class="row mt-4">
+                <div class="col-md-4 offset-md-4">
+                    <form method="post" action="/signup.php" novalidate>
+                        {% for item in errors %}
+                            <div class="alert alert-danger" role="alert">
+                                {{ item }}
+                            </div>
+                        {% endfor %}
+                        {% if success %}
+                            <div class="alert alert-success" role="alert">
+                                Account successfully created!
+                            </div>
+                        {% endif %}
+                        <div class="mb-3">
+                            <label class="form-label" for="email">Email Address</label>
+                            <input name="email" id="email" class="form-control" type="email" placeholder="user@domain.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input name="password" id="password" class="form-control" type="password" placeholder="minimum 8 characters">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Sign up</button>
+                    </form>
+                </div>
+        </div>
+    </div>
 {% endblock %}
