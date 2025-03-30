@@ -45,7 +45,6 @@ The application uses the following main tables:
 - `reviews` - User reviews and ratings
 - `favorites` - User's favorite games
 - `blog_posts` - Blog content
-- `comments` - User comments on blog posts
 
 ## Development
 
@@ -58,16 +57,12 @@ The project uses:
 
 This project is licensed under the MIT License.
 
-## About This Project
-
-This is a PHP web application for board game enthusiasts to discover, review, and discuss their favorite tabletop games. I built this to create a community space where gamers can track their collections and share their experiences.
-
 ## Getting Started
 
 ### Prerequisites
 
 Before you begin, make sure you have:
-- PHP 8.2+ (I recommend 8.2.8 or later)
+- PHP 8.2+
 - MariaDB 10.4+ (works with 10.4.28)
 - Composer (for dependency management)
 - Docker & Docker Compose (optional but makes setup easier)
@@ -127,8 +122,6 @@ Each game has:
 - User authentication system
 - Game database browser
 - Review functionality
-- Community discussion area
-- Blog section
 
 ## Development Notes
 
@@ -152,9 +145,3 @@ We've included dev container configuration - just:
 **phpMyAdmin Not Working?**
 - Confirm port 8082 is free
 - Try `docker-compose restart`
-
-## Why I Built This
-
-As a board game enthusiast, I wanted to create a better way to track my collection and share reviews with friends. This project combines my love for gaming with my passion for web development.
-
-Feel free to contribute or use this as a base for your own projects!

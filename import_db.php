@@ -1,54 +1,49 @@
 <?php
-require_once 'config.php';
-//this php file is for testing only just to apply data swiftly
-try {
-    // Get database connection
-    $conn = getDBConnection();
-    
-    // Read the SQL file
-    $sql = file_get_contents('database.sql');
-    
-    // Split into individual statements
-    $statements = array_filter(
-        array_map(
-            function($query) {
-                return trim($query);
-            },
-            explode(';', $sql)
-        )
-    );
-    
-    // Execute each statement
-    foreach ($statements as $statement) {
-        if (!empty($statement)) {
-            try {
-                if (!$conn->query($statement)) {
-                    echo "Error executing statement: " . $conn->error . "\n";
-                    echo "Statement was: " . $statement . "\n\n";
-                } else {
-                    echo "Successfully executed: " . substr($statement, 0, 50) . "...\n";
-                }
-            } catch (Exception $e) {
-                echo "Error: " . $e->getMessage() . "\n";
-                echo "Statement was: " . $statement . "\n\n";
-            }
+// Import database schema and sample data
+require_once 'vendor/autoload.php';
+
+// Connect to database
+$db = new PDO(
+    "mysql:host=db;dbname=mariadb;charset=utf8mb4",
+    "mariadb",
+    "mariadb",
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+);
+
+// Read schema file
+$schema = file_get_contents('database.sql');
+
+// Split into statements
+$statements = array_filter(
+    array_map('trim', 
+        explode(';', $schema)
+    )
+);
+
+// Execute schema statements
+foreach ($statements as $statement) {
+    if (!empty($statement)) {
+        try {
+            $db->exec($statement);
+        } catch (PDOException $e) {
+            echo "Error executing statement: " . $e->getMessage() . "\n";
         }
     }
-    
-    echo "\nDatabase schema import completed!\n";
-    
-    // Verify tables were created
-    $result = $conn->query("SHOW TABLES");
-    echo "\nCreated tables:\n";
-    while ($row = $result->fetch_array()) {
-        echo "- " . $row[0] . "\n";
-    }
-    
-    // Verify sample data
-    $result = $conn->query("SELECT COUNT(*) as count FROM games");
-    $row = $result->fetch_assoc();
-    echo "\nNumber of games in database: " . $row['count'] . "\n";
-    
-} catch (Exception $e) {
-    echo "Fatal error: " . $e->getMessage() . "\n";
+}
+
+// Verify tables
+$tables = $db->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+echo "Created " . count($tables) . " tables\n";
+
+// Verify sample data
+$counts = [
+    'BoardGame' => $db->query("SELECT COUNT(*) FROM BoardGame")->fetchColumn(),
+    'Publisher' => $db->query("SELECT COUNT(*) FROM Publisher")->fetchColumn(),
+    'Designer' => $db->query("SELECT COUNT(*) FROM Designer")->fetchColumn(),
+    'Artist' => $db->query("SELECT COUNT(*) FROM Artist")->fetchColumn()
+];
+
+echo "\nSample data imported:\n";
+foreach ($counts as $table => $count) {
+    echo "$table: $count records\n";
 } 

@@ -1,44 +1,69 @@
 <?php
-// Start session before any output
+// Start session
 session_start();
-
 require_once 'vendor/autoload.php';
+require_once 'session_helper.php';
 
-// Classes used in this page
-use Adam\AwPhpProject\App;
-use Adam\AwPhpProject\Game;
+use Twig\Loader\FilesystemLoader;
+use Twig\Environment;
 
-// Create app from App class
-$app = new App();
-$site_name = $app->site_name;
-
-// Check if user is logged in
-$isauthenticated = false;
-if (isset($_SESSION['email'])) {
-    $isauthenticated = true;
-}
+// Initialize Twig
+$loader = new FilesystemLoader('templates');
+$twig = new Environment($loader);
 
 // Get search query
-$search_query = isset($_GET['q']) ? trim($_GET['q']) : '';
+$query = $_GET['q'] ?? '';
 
-// Create Game instance
-$game = new Game();
+// Initialize variables
+$data = [
+    'loggedin' => isLoggedIn(),
+    'query' => $query,
+    'results' => []
+];
 
-// Get search results
-$search_results = [];
-if (!empty($search_query)) {
-    $search_results = $game->searchGames($search_query);
+// Search if query exists
+if ($query) {
+    try {
+        $db = new PDO(
+            "mysql:host=db;dbname=mariadb;charset=utf8mb4",
+            "mariadb",
+            "mariadb",
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+
+        $stmt = $db->prepare("
+            SELECT 
+                BoardGame.*,
+                GROUP_CONCAT(DISTINCT Publisher.name) as publishers,
+                GROUP_CONCAT(DISTINCT Designer.name) as designers,
+                GROUP_CONCAT(DISTINCT Artist.name) as artists
+            FROM BoardGame
+            LEFT JOIN BoardGame_Publisher ON BoardGame.id = BoardGame_Publisher.game_id
+            LEFT JOIN Publisher ON BoardGame_Publisher.publisher_id = Publisher.id
+            LEFT JOIN BoardGame_Designer ON BoardGame.id = BoardGame_Designer.game_id
+            LEFT JOIN Designer ON BoardGame_Designer.designer_id = Designer.id
+            LEFT JOIN BoardGame_Artist ON BoardGame.id = BoardGame_Artist.game_id
+            LEFT JOIN Artist ON BoardGame_Artist.artist_id = Artist.id
+            WHERE BoardGame.visible = 1
+            AND (BoardGame.title LIKE ? OR BoardGame.description LIKE ?)
+            GROUP BY BoardGame.id
+            ORDER BY BoardGame.rating DESC
+        ");
+
+        $searchTerm = "%{$query}%";
+        $stmt->execute([$searchTerm, $searchTerm]);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Update image paths
+        foreach ($results as &$game) {
+            $game['image'] = '/images/games/' . $game['image'];
+        }
+
+        $data['results'] = $results;
+    } catch (PDOException $e) {
+        $data['error'] = "Error searching games: " . $e->getMessage();
+    }
 }
 
-// Loading the twig template
-$loader = new \Twig\Loader\FilesystemLoader('templates');
-$twig = new \Twig\Environment($loader);
-$template = $twig->load('search.twig');
-
-// Render the output
-echo $template->render([
-    'website_name' => $site_name,
-    'loggedin' => $isauthenticated,
-    'search_query' => $search_query,
-    'search_results' => $search_results
-]); 
+// Render template
+echo $twig->render('search.twig', $data); 

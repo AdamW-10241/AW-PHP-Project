@@ -8,7 +8,7 @@ use Twig\Environment;
 
 $redirect = false;
 
-// Handle POST request for new review
+// Handle new review submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isLoggedIn()) {
     $game_id = $_POST['game_id'] ?? null;
     $rating = $_POST['rating'] ?? null;
@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isLoggedIn()) {
                 [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
             );
 
-            // Get user ID from email
+            // Get user ID
             $stmt = $db->prepare("SELECT id FROM Account WHERE email = ?");
             $stmt->execute([$_SESSION['email']]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isLoggedIn()) {
                 throw new Exception("User not found");
             }
 
-            // Insert review
+            // Save review
             $stmt = $db->prepare("
                 INSERT INTO reviews (user_id, game_id, rating, comment, created_at)
                 VALUES (?, ?, ?, ?, NOW())
@@ -45,7 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isLoggedIn()) {
                 $review_text
             ]);
 
-            // Set redirect flag instead of using header()
             $redirect = true;
         } catch (Exception $e) {
             $error = "Error submitting review: " . $e->getMessage();
@@ -53,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isLoggedIn()) {
     }
 }
 
-// Load Twig
+// Initialize Twig
 $loader = new FilesystemLoader('templates');
 $twig = new Environment($loader);
 
@@ -65,7 +64,7 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 
-    // Get all reviews with user and game information
+    // Get reviews with user and game details
     $stmt = $db->query("
         SELECT 
             r.*,
@@ -78,7 +77,7 @@ try {
     ");
     $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Get all games for the review form
+    // Get games for the review form
     $stmt = $db->query("
         SELECT id, title 
         FROM BoardGame 

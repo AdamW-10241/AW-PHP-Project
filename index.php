@@ -1,110 +1,93 @@
 <?php
-// Start session before any output
+// Start session
 session_start();
-
 require_once 'vendor/autoload.php';
-require_once 'config.php';
 require_once 'session_helper.php';
 
-use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
+use Twig\Environment;
 
 // Initialize Twig
 $loader = new FilesystemLoader('templates');
 $twig = new Environment($loader);
 
-// Get database connection
-$conn = getDBConnection();
+// Connect to database
+$db = new PDO(
+    "mysql:host=db;dbname=mariadb;charset=utf8mb4",
+    "mariadb",
+    "mariadb",
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+);
 
 // Get featured game
-$featuredGameQuery = "
+$stmt = $db->query("
     SELECT 
-        BoardGame.id,
-        BoardGame.title as name,
-        BoardGame.tagline,
-        BoardGame.description,
-        BoardGame.player_range,
-        BoardGame.age_range,
-        BoardGame.playtime_range,
-        BoardGame.image as image_url,
-        BoardGame.tags,
-        (SELECT GROUP_CONCAT(DISTINCT Publisher.name SEPARATOR ', ') 
-        FROM BoardGame_Publisher 
-        INNER JOIN Publisher ON BoardGame_Publisher.publisher_id = Publisher.publisher_id
-        WHERE BoardGame_Publisher.boardgame_id = BoardGame.id) AS publishers,
-        (SELECT GROUP_CONCAT(DISTINCT CONCAT(Designer.first_name, ' ', Designer.last_name) SEPARATOR ', ') 
-        FROM BoardGame_Designer 
-        INNER JOIN Designer ON BoardGame_Designer.designer_id = Designer.designer_id
-        WHERE BoardGame_Designer.boardgame_id = BoardGame.id) AS designers,
-        (SELECT GROUP_CONCAT(DISTINCT CONCAT(Artist.first_name, ' ', Artist.last_name) SEPARATOR ', ') 
-        FROM BoardGame_Artist 
-        INNER JOIN Artist ON BoardGame_Artist.artist_id = Artist.artist_id
-        WHERE BoardGame_Artist.boardgame_id = BoardGame.id) AS artists
+        BoardGame.*,
+        GROUP_CONCAT(DISTINCT Publisher.name) as publishers,
+        GROUP_CONCAT(DISTINCT Designer.name) as designers,
+        GROUP_CONCAT(DISTINCT Artist.name) as artists
     FROM BoardGame
+    LEFT JOIN BoardGame_Publisher ON BoardGame.id = BoardGame_Publisher.game_id
+    LEFT JOIN Publisher ON BoardGame_Publisher.publisher_id = Publisher.id
+    LEFT JOIN BoardGame_Designer ON BoardGame.id = BoardGame_Designer.game_id
+    LEFT JOIN Designer ON BoardGame_Designer.designer_id = Designer.id
+    LEFT JOIN BoardGame_Artist ON BoardGame.id = BoardGame_Artist.game_id
+    LEFT JOIN Artist ON BoardGame_Artist.artist_id = Artist.id
     WHERE BoardGame.visible = 1
-    ORDER BY BoardGame.id ASC
-    LIMIT 1";
-$featuredGame = $conn->query($featuredGameQuery)->fetch_assoc();
+    GROUP BY BoardGame.id
+    ORDER BY BoardGame.rating DESC
+    LIMIT 1
+");
+$featured_game = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Get popular games
-$popularGamesQuery = "
+$stmt = $db->query("
     SELECT 
-        BoardGame.id,
-        BoardGame.title as name,
-        BoardGame.tagline,
-        BoardGame.description,
-        BoardGame.player_range,
-        BoardGame.age_range,
-        BoardGame.playtime_range,
-        BoardGame.image as image_url,
-        BoardGame.tags,
-        (SELECT GROUP_CONCAT(DISTINCT Publisher.name SEPARATOR ', ') 
-        FROM BoardGame_Publisher 
-        INNER JOIN Publisher ON BoardGame_Publisher.publisher_id = Publisher.publisher_id
-        WHERE BoardGame_Publisher.boardgame_id = BoardGame.id) AS publishers,
-        (SELECT GROUP_CONCAT(DISTINCT CONCAT(Designer.first_name, ' ', Designer.last_name) SEPARATOR ', ') 
-        FROM BoardGame_Designer 
-        INNER JOIN Designer ON BoardGame_Designer.designer_id = Designer.designer_id
-        WHERE BoardGame_Designer.boardgame_id = BoardGame.id) AS designers,
-        (SELECT GROUP_CONCAT(DISTINCT CONCAT(Artist.first_name, ' ', Artist.last_name) SEPARATOR ', ') 
-        FROM BoardGame_Artist 
-        INNER JOIN Artist ON BoardGame_Artist.artist_id = Artist.artist_id
-        WHERE BoardGame_Artist.boardgame_id = BoardGame.id) AS artists
+        BoardGame.*,
+        GROUP_CONCAT(DISTINCT Publisher.name) as publishers,
+        GROUP_CONCAT(DISTINCT Designer.name) as designers,
+        GROUP_CONCAT(DISTINCT Artist.name) as artists
     FROM BoardGame
+    LEFT JOIN BoardGame_Publisher ON BoardGame.id = BoardGame_Publisher.game_id
+    LEFT JOIN Publisher ON BoardGame_Publisher.publisher_id = Publisher.id
+    LEFT JOIN BoardGame_Designer ON BoardGame.id = BoardGame_Designer.game_id
+    LEFT JOIN Designer ON BoardGame_Designer.designer_id = Designer.id
+    LEFT JOIN BoardGame_Artist ON BoardGame.id = BoardGame_Artist.game_id
+    LEFT JOIN Artist ON BoardGame_Artist.artist_id = Artist.id
     WHERE BoardGame.visible = 1
-    ORDER BY BoardGame.id ASC
-    LIMIT 3";
-$popularGames = $conn->query($popularGamesQuery)->fetch_all(MYSQLI_ASSOC);
+    GROUP BY BoardGame.id
+    ORDER BY BoardGame.rating DESC
+    LIMIT 4
+");
+$popular_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Update image paths
-if ($featuredGame) {
-    $featuredGame['image_url'] = '/assets/cover_images/' . basename($featuredGame['image_url']);
+foreach ($popular_games as &$game) {
+    $game['image'] = '/images/games/' . $game['image'];
 }
-
-foreach ($popularGames as &$game) {
-    $game['image_url'] = '/assets/cover_images/' . basename($game['image_url']);
+if ($featured_game) {
+    $featured_game['image'] = '/images/games/' . $featured_game['image'];
 }
 
 // Get latest news
-$latestNews = [];
 try {
-    $newsQuery = "SELECT * FROM news ORDER BY created_at DESC LIMIT 3";
-    $newsResult = $conn->query($newsQuery);
-    if ($newsResult) {
-        while ($row = $newsResult->fetch_assoc()) {
-            $latestNews[] = $row;
-        }
-    }
-} catch (Exception $e) {
+    $stmt = $db->query("
+        SELECT * FROM news 
+        ORDER BY created_at DESC 
+        LIMIT 3
+    ");
+    $news = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
     // Table doesn't exist or other error, continue with empty news array
+    $news = [];
 }
 
-// Render the template with data
+// Render template
 echo $twig->render('index.twig', [
     'loggedin' => isLoggedIn(),
-    'featuredGame' => $featuredGame,
-    'popularGames' => $popularGames,
-    'latestNews' => $latestNews
+    'featured_game' => $featured_game,
+    'popular_games' => $popular_games,
+    'news' => $news
 ]);
 ?>
 

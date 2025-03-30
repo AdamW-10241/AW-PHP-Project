@@ -1,63 +1,46 @@
 <?php 
-// Start session before any output
+// Start session
 session_start();
-
 require_once 'vendor/autoload.php';
 require_once 'session_helper.php';
 
-// Classes used in this page
-use Adam\AwPhpProject\App;
-use Adam\AwPhpProject\Account;
-use Adam\AwPhpProject\SessionManager;
+use Twig\Loader\FilesystemLoader;
+use Twig\Environment;
 
-// Create app from App class
-$app = new App();
-$site_name = $app->site_name;
+// Initialize Twig
+$loader = new FilesystemLoader('templates');
+$twig = new Environment($loader);
 
-// Check if user is already logged in
+// Redirect if already logged in
 if (isLoggedIn()) {
-    // Redirect to home if already logged in
-    header("location: /");
+    header('Location: /index.php');
     exit();
 }
 
-// Create data variables
-$signup_errors = [];
-$signup_success = false;
+// Initialize variables
+$data = [
+    'loggedin' => isLoggedIn(),
+    'error' => null
+];
 
-// Checking for form submission via POST
-if ($_SERVER['REQUEST_METHOD'] == "POST") {
-    // Store email in a variable
-    $email = $_POST['email'];
-    // Store password in a variable
-    $password = $_POST['password'];
-    // Create an instance of account class
-    $account = new Account();
-    // Call the create method in account
-    $account->create($email, $password);
-    if ($account->response['success'] == true) {
-        // Account has been created, set the session variable
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = $_POST['email'] ?? '';
+    $password = $_POST['password'] ?? '';
+
+    try {
+        $account = new Account();
+        $account->create($email, $password);
+        
+        // Set session and redirect
         $_SESSION['email'] = $email;
-        $signup_success = true;
-        // Redirect to home page after successful signup
-        header("location: /");
+        header('Location: /index.php');
         exit();
-    } else {
-        // There are errors
-        $signup_errors['message'] = implode(" ", $account->response['errors']);
+    } catch (Exception $e) {
+        $data['error'] = $e->getMessage();
     }
 }
 
-// Loading the twig template
-$loader = new \Twig\Loader\FilesystemLoader('templates');
-$twig = new \Twig\Environment($loader);
-$template = $twig->load('signup.twig');
-
-// Render the output
-echo $template->render([
-    'website_name' => $site_name,
-    'errors' => $signup_errors,
-    'success' => $signup_success,
-    'loggedin' => isLoggedIn()
-]);
+// Render template
+echo $twig->render('signup.twig', $data);
 ?>
