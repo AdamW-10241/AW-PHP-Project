@@ -13,18 +13,18 @@ class Database extends App {
         
         try {
             if (
-                $_ENV['DBHOST'] &&
-                $_ENV['DBUSER'] &&
-                $_ENV['DBPASSWORD'] &&
-                $_ENV['DBNAME']
+                $_ENV['DB_HOST'] &&
+                $_ENV['DB_USER'] &&
+                $_ENV['DB_PASS'] &&
+                $_ENV['DB_NAME']
             ) {
                 // Initialise connection
                 try {
                     $this->connection = mysqli_connect(
-                        $_ENV['DBHOST'],
-                        $_ENV['DBUSER'],
-                        $_ENV['DBPASSWORD'],
-                        $_ENV['DBNAME']
+                        $_ENV['DB_HOST'],
+                        $_ENV['DB_USER'],
+                        $_ENV['DB_PASS'],
+                        $_ENV['DB_NAME']
                     );
                     if (!$this->connection) {
                         throw new Exception("Database connection can not be created.");
