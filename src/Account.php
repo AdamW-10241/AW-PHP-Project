@@ -84,6 +84,15 @@ class Account extends Database {
 
     }
 
+    public function getUserByEmail($email) {
+        $query = "SELECT * FROM Account WHERE email = ?";
+        $statement = $this->connection->prepare($query);
+        $statement->bind_param("s", $email);
+        $statement->execute();
+        $result = $statement->get_result();
+        return $result->fetch_assoc();
+    }
+
     public function login($email, $password)
     {
         // Check if email is valid
