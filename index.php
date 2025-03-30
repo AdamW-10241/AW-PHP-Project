@@ -13,12 +13,7 @@ $loader = new FilesystemLoader('templates');
 $twig = new Environment($loader);
 
 // Connect to database
-$db = new PDO(
-    "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
-    DB_USER,
-    DB_PASS,
-    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-);
+$db = getDBConnection();
 
 // Get featured game
 $stmt = $db->query("
@@ -39,35 +34,46 @@ $stmt = $db->query("
     ORDER BY BoardGame.year DESC
     LIMIT 1
 ");
-$featured_game = $stmt->fetch(PDO::FETCH_ASSOC);
+$featured_game = $stmt->fetch_assoc();
 
 // Get popular games
 $stmt = $db->query("
-    SELECT 
-        BoardGame.*,
-        GROUP_CONCAT(DISTINCT Publisher.name) as publishers,
-        GROUP_CONCAT(DISTINCT CONCAT(Designer.first_name, ' ', Designer.last_name)) as designers,
-        GROUP_CONCAT(DISTINCT CONCAT(Artist.first_name, ' ', Artist.last_name)) as artists
-    FROM BoardGame
-    LEFT JOIN BoardGame_Publisher ON BoardGame.id = BoardGame_Publisher.boardgame_id
-    LEFT JOIN Publisher ON BoardGame_Publisher.publisher_id = Publisher.publisher_id
-    LEFT JOIN BoardGame_Designer ON BoardGame.id = BoardGame_Designer.boardgame_id
-    LEFT JOIN Designer ON BoardGame_Designer.designer_id = Designer.designer_id
-    LEFT JOIN BoardGame_Artist ON BoardGame.id = BoardGame_Artist.boardgame_id
-    LEFT JOIN Artist ON BoardGame_Artist.artist_id = Artist.artist_id
-    WHERE BoardGame.visible = 1
-    GROUP BY BoardGame.id
-    ORDER BY BoardGame.year DESC
+    SELECT * FROM BoardGame 
+    WHERE visible = 1 
+    ORDER BY RAND() 
     LIMIT 4
 ");
-$popular_games = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Debug: Check for query errors
+if ($db->error) {
+    error_log("Database error: " . $db->error);
+}
+
+$popular_games = [];
+while ($row = $stmt->fetch_assoc()) {
+    $popular_games[] = $row;
+}
+
+// Debug: Print detailed information
+error_log("Number of popular games: " . count($popular_games));
+error_log("Database error (if any): " . $db->error);
+error_log("Database errno (if any): " . $db->errno);
+
+if (count($popular_games) > 0) {
+    error_log("First popular game: " . print_r($popular_games[0], true));
+} else {
+    // Check if there are any games at all
+    $check_stmt = $db->query("SELECT COUNT(*) as count FROM BoardGame WHERE visible = 1");
+    $count = $check_stmt->fetch_assoc()['count'];
+    error_log("Total number of visible games in database: " . $count);
+}
 
 // Update image paths
 foreach ($popular_games as &$game) {
-    $game['image'] = '/images/games/' . $game['image'];
+    $game['image'] = '/assets/cover_images/' . $game['image'];
 }
 if ($featured_game) {
-    $featured_game['image'] = '/images/games/' . $featured_game['image'];
+    $featured_game['image'] = '/assets/cover_images/' . $featured_game['image'];
 }
 
 // Get latest news
@@ -77,8 +83,11 @@ try {
         ORDER BY created_at DESC 
         LIMIT 3
     ");
-    $news = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
+    $news = [];
+    while ($row = $stmt->fetch_assoc()) {
+        $news[] = $row;
+    }
+} catch (Exception $e) {
     // Table doesn't exist or other error, continue with empty news array
     $news = [];
 }
