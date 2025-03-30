@@ -6,6 +6,7 @@ require_once 'session_helper.php';
 
 use Twig\Loader\FilesystemLoader;
 use Twig\Environment;
+use Adam\AwPhpProject\Account;
 
 // Initialize Twig
 $loader = new FilesystemLoader('templates');

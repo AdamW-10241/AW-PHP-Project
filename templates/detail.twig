@@ -27,9 +27,87 @@
                             <li><strong>Artists:</strong> {{ detail.artists }}</li>
                             <li><strong>Designers:</strong> {{ detail.designers }}</li>
                             <li><strong>Publishers:</strong> {{ detail.publishers }}</li>
+                            <li><strong>Year:</strong> {{ detail.year }}</li>
+                            <li><strong>Players:</strong> {{ detail.player_range }}</li>
+                            <li><strong>Age:</strong> {{ detail.age_range }}</li>
+                            <li><strong>Playtime:</strong> {{ detail.playtime_range }}</li>
                         </ul>
                     </div>
                     <a href="/games.php" class="btn btn-primary">Back to Games</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviews Section -->
+        <div class="container mb-5">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4">Reviews</h2>
+                    
+                    {% if loggedin %}
+                        <!-- Review Form for Logged-in Users -->
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">Write a Review</h5>
+                                {% if error %}
+                                    <div class="alert alert-danger">{{ error }}</div>
+                                {% endif %}
+                                <form action="detail.php?id={{ detail.id }}" method="POST">
+                                    <input type="hidden" name="game_id" value="{{ detail.id }}">
+                                    <div class="mb-3">
+                                        <label for="rating" class="form-label">Rating</label>
+                                        <select class="form-select" id="rating" name="rating" required>
+                                            <option value="">Select rating</option>
+                                            <option value="5">5 - Excellent</option>
+                                            <option value="4">4 - Very Good</option>
+                                            <option value="3">3 - Good</option>
+                                            <option value="2">2 - Fair</option>
+                                            <option value="1">1 - Poor</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="review_text" class="form-label">Your Review</label>
+                                        <textarea class="form-control" id="review_text" name="review_text" rows="4" required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                                </form>
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- Login Message for Non-logged-in Users -->
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Please <a href="/login.php">log in</a> to write a review.
+                        </div>
+                    {% endif %}
+
+                    <!-- Existing Reviews -->
+                    <div class="mt-4">
+                        <h3>Recent Reviews</h3>
+                        {% if reviews is defined and reviews|length > 0 %}
+                            {% for review in reviews %}
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h5 class="card-title">{{ review.user_name }}</h5>
+                                            <div class="text-warning">
+                                                {% for i in 1..5 %}
+                                                    {% if i <= review.rating %}
+                                                        <i class="fas fa-star"></i>
+                                                    {% else %}
+                                                        <i class="far fa-star"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        <p class="card-text">{{ review.comment }}</p>
+                                        <small class="text-muted">Posted on {{ review.created_at|date('F j, Y') }}</small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">No reviews yet. Be the first to review this game!</p>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>

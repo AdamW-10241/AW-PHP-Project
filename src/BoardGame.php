@@ -89,7 +89,30 @@ class BoardGame extends Database {
         $statement->bind_param("i", $id);
         $statement->execute();
         $result = $statement->get_result();
-        return $result->fetch_assoc();
+        $detail = $result->fetch_assoc();
+
+        // Get reviews for this game
+        if ($detail) {
+            $reviews_query = "
+                SELECT 
+                    r.*,
+                    u.email as user_email
+                FROM reviews r
+                JOIN Account u ON r.user_id = u.id
+                WHERE r.game_id = ?
+                ORDER BY r.created_at DESC
+            ";
+            $stmt = $this->connection->prepare($reviews_query);
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $reviews_result = $stmt->get_result();
+            $detail['reviews'] = [];
+            while ($review = $reviews_result->fetch_assoc()) {
+                $detail['reviews'][] = $review;
+            }
+        }
+
+        return $detail;
     }
 }
 ?>
