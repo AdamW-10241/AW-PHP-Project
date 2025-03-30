@@ -7,16 +7,16 @@ services:
       dockerfile: Dockerfile
 
     volumes:
-      - ../..:/workspaces:cached
+      - ..:/var/www/html:cached
 
     # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity
 
-    # Runs app on the same network as the database container, allows "forwardPorts" in devcontainer.json function.
-    network_mode: service:db
+    ports:
+      - "80:80"
 
-    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally. 
-    # (Adding the "ports" property to this file will not forward from a Codespace.)
+    depends_on:
+      - db
 
   db:
     image: mariadb:10.4

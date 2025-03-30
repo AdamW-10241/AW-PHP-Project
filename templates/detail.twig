@@ -27,13 +27,186 @@
                             <li><strong>Artists:</strong> {{ detail.artists }}</li>
                             <li><strong>Designers:</strong> {{ detail.designers }}</li>
                             <li><strong>Publishers:</strong> {{ detail.publishers }}</li>
+                            <li><strong>Year:</strong> {{ detail.year }}</li>
+                            <li><strong>Players:</strong> {{ detail.player_range }}</li>
+                            <li><strong>Age:</strong> {{ detail.age_range }}</li>
+                            <li><strong>Playtime:</strong> {{ detail.playtime_range }}</li>
                         </ul>
                     </div>
                     <a href="/games.php" class="btn btn-primary">Back to Games</a>
                 </div>
             </div>
         </div>
+
+        <!-- Reviews Section -->
+        <div class="container mb-5">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4">Reviews</h2>
+                    
+                    {% if loggedin %}
+                        <!-- Review Form for Logged-in Users -->
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">Write a Review</h5>
+                                {% if error %}
+                                    <div class="alert alert-danger">{{ error }}</div>
+                                {% endif %}
+                                <form action="detail.php?id={{ detail.id }}" method="POST">
+                                    <input type="hidden" name="game_id" value="{{ detail.id }}">
+                                    <div class="mb-3">
+                                        <label for="rating" class="form-label">Rating</label>
+                                        <select class="form-select" id="rating" name="rating" required>
+                                            <option value="">Select rating</option>
+                                            <option value="5">5 - Excellent</option>
+                                            <option value="4">4 - Very Good</option>
+                                            <option value="3">3 - Good</option>
+                                            <option value="2">2 - Fair</option>
+                                            <option value="1">1 - Poor</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="review_text" class="form-label">Your Review</label>
+                                        <textarea class="form-control" id="review_text" name="review_text" rows="4" required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                                </form>
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- Login Message for Non-logged-in Users -->
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Please <a href="/login.php">log in</a> to write a review.
+                        </div>
+                    {% endif %}
+
+                    <!-- Existing Reviews -->
+                    <div class="mt-4">
+                        <h3>Recent Reviews</h3>
+                        {% if reviews is defined and reviews|length > 0 %}
+                            {% for review in reviews %}
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <p class="mb-0">{{ review.user_name }}</p>
+                                                <small class="text-muted">{{ review.created_at|date('F j, Y') }}</small>
+                                            </div>
+                                            <div class="d-flex align-items-center">
+                                                {% for i in 1..5 %}
+                                                <i class="fas fa-star {% if i <= review.rating %}text-warning{% else %}text-muted{% endif %} me-1"></i>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        <div class="review-content">
+                                            <p class="mb-0">{{ review.comment }}</p>
+                                            {% if loggedin and review.user_name == session_email %}
+                                            <div class="mt-2">
+                                                <button class="btn btn-sm btn-outline-primary edit-review" 
+                                                        data-review-id="{{ review.id }}"
+                                                        data-rating="{{ review.rating }}"
+                                                        data-comment="{{ review.comment }}">
+                                                    <i class="fas fa-edit"></i> Edit Review
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger delete-review" 
+                                                        data-review-id="{{ review.id }}">
+                                                    <i class="fas fa-trash"></i> Delete Review
+                                                </button>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="edit-form d-none">
+                                            <form action="/detail.php?id={{ detail.id }}" method="POST" class="edit-review-form">
+                                                <input type="hidden" name="action" value="edit">
+                                                <input type="hidden" name="review_id" value="{{ review.id }}">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Rating</label>
+                                                    <select name="rating" required class="form-select">
+                                                        <option value="5" {% if review.rating == 5 %}selected{% endif %}>5 - Excellent</option>
+                                                        <option value="4" {% if review.rating == 4 %}selected{% endif %}>4 - Very Good</option>
+                                                        <option value="3" {% if review.rating == 3 %}selected{% endif %}>3 - Good</option>
+                                                        <option value="2" {% if review.rating == 2 %}selected{% endif %}>2 - Fair</option>
+                                                        <option value="1" {% if review.rating == 1 %}selected{% endif %}>1 - Poor</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Your Review</label>
+                                                    <textarea name="review_text" rows="4" required class="form-control">{{ review.comment }}</textarea>
+                                                </div>
+                                                <div class="d-flex gap-2">
+                                                    <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+                                                    <button type="button" class="btn btn-secondary btn-sm cancel-edit">Cancel</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">No reviews yet. Be the first to review this game!</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
     {% include 'footer.twig' %}
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteReviewModal" tabindex="-1" aria-labelledby="deleteReviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteReviewModalLabel">Delete Review</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete your review? This action cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form id="deleteReviewForm" method="POST" style="display: inline;">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="review_id" id="deleteReviewId">
+                        <button type="submit" class="btn btn-danger">Delete Review</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% block scripts %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle edit button click
+        document.querySelectorAll('.edit-review').forEach(button => {
+            button.addEventListener('click', function() {
+                const cardBody = this.closest('.card-body');
+                cardBody.querySelector('.review-content').classList.add('d-none');
+                cardBody.querySelector('.edit-form').classList.remove('d-none');
+            });
+        });
+
+        // Handle cancel button click
+        document.querySelectorAll('.cancel-edit').forEach(button => {
+            button.addEventListener('click', function() {
+                const cardBody = this.closest('.card-body');
+                cardBody.querySelector('.review-content').classList.remove('d-none');
+                cardBody.querySelector('.edit-form').classList.add('d-none');
+            });
+        });
+
+        // Handle delete button click
+        document.querySelectorAll('.delete-review').forEach(button => {
+            button.addEventListener('click', function() {
+                const reviewId = this.dataset.reviewId;
+                document.getElementById('deleteReviewId').value = reviewId;
+                const modal = new bootstrap.Modal(document.getElementById('deleteReviewModal'));
+                modal.show();
+            });
+        });
+    });
+    </script>
+    {% endblock %}
 </body>
 </html>
