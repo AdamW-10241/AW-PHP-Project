@@ -125,6 +125,7 @@ try {
         'error' => $error,
         'redirect' => $redirect,
         'session_email' => $_SESSION['email'] ?? null,
+        'session_username' => $_SESSION['username'] ?? null,
         'current_page' => 'reviews'
     ]);
 } catch (Exception $e) {

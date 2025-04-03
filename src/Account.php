@@ -13,18 +13,23 @@ class Account extends Database {
         parent::__construct();
     }
 
-    public function create($email, $password)
+    public function create($email, $password, $username)
     {
         // Perform query to create an account with email and password
         // Create the insert query
         $insert_query = "INSERT INTO 
-        Account( email, password, reset, active, last_seen, created ) 
-        VALUES ( ?, ?, ?, 1, ?, ? )
+        Account( email, password, username, reset, active, last_seen, created ) 
+        VALUES ( ?, ?, ?, ?, 1, ?, ? )
         ";
         // Check if email is valid
         if (Validator::validateEmail($email) == false) {
             // Email is not valid
             $this -> errors['email'] = "Email address is not valid.";
+        }
+        // Check if email is valid
+        if ($this -> usernameExists($username)) {
+            // Email is not valid
+            $this -> errors['email'] = "Username already in use.";
         }
         // Check if email is already in account database
         $email_query = "SELECT EXISTS
@@ -60,7 +65,7 @@ class Account extends Database {
         // Create mysql prepared statement
         $insert_statement = $this -> connection -> prepare($insert_query);
         // Binding parameters to the query
-        $insert_statement -> bind_param( "sssss", $email, $hashed_pass, $reset, $create_time, $create_time );
+        $insert_statement -> bind_param( "ssssss", $email, $hashed_pass, $username, $reset, $create_time, $create_time );
         // Execute statement
         if ($insert_statement -> execute()) {
             $this -> response['success'] = 1;
@@ -74,18 +79,17 @@ class Account extends Database {
         return($this -> response);
     }
 
-    public function update()
-    {
-
-    }
-
-    public function getAccount()
-    {
-
-    }
-
     public function getUserByEmail($email) {
         $query = "SELECT * FROM Account WHERE email = ?";
+        $statement = $this->connection->prepare($query);
+        $statement->bind_param("s", $email);
+        $statement->execute();
+        $result = $statement->get_result();
+        return $result->fetch_assoc();
+    }
+
+    public function getUsername() {
+        $query = "SELECT username FROM Account WHERE email = ?";
         $statement = $this->connection->prepare($query);
         $statement->bind_param("s", $email);
         $statement->execute();
@@ -141,6 +145,92 @@ class Account extends Database {
         }
 
         return $this->response;
+    }
+
+    /**
+     * Check if email exists
+     * @param string $email Email to check
+     * @return bool True if email exists
+     */
+    public function emailExists($email) {
+        $sql = "SELECT COUNT(*) FROM Account WHERE email = ?";
+        $stmt = $this->connection->prepare($sql);
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_row();
+        return $row[0] > 0;
+    }
+
+    /**
+     * Check if username exists
+     * @param string $username Username to check
+     * @return bool True if username exists
+     */
+    public function usernameExists($username) {
+        $sql = "SELECT COUNT(*) FROM Account WHERE username = ?";
+        $stmt = $this->connection->prepare($sql);
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_row();
+        return $row[0] > 0;
+    }
+
+    /**
+     * Verify user password
+     * @param string $email User's email
+     * @param string $password Password to verify
+     * @return bool True if password is correct
+     */
+    public function verifyPassword($email, $password) {
+        $sql = "SELECT password FROM Account WHERE email = ?";
+        $stmt = $this->connection->prepare($sql);
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        return password_verify($password, $row['password']);
+    }
+
+    /**
+     * Update user's email
+     * @param string $old_email Current email
+     * @param string $new_email New email
+     * @return bool True if update successful
+     */
+    public function updateEmail($old_email, $new_email) {
+        $sql = "UPDATE Account SET email = ? WHERE email = ?";
+        $stmt = $this->connection->prepare($sql);
+        $stmt->bind_param("ss", $new_email, $old_email);
+        return $stmt->execute();
+    }
+
+    /**
+     * Update user's password
+     * @param string $email User's email
+     * @param string $new_password New password
+     * @return bool True if update successful
+     */
+    public function updatePassword($email, $new_password) {
+        $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+        $sql = "UPDATE Account SET password = ? WHERE email = ?";
+        $stmt = $this->connection->prepare($sql);
+        $stmt->bind_param("ss", $hashed_password, $email);
+        return $stmt->execute();
+    }
+
+    /**
+     * Update user's username
+     * @param string $email User's email
+     * @param string $new_username New username
+     * @return bool True if update successful
+     */
+    public function updateUsername($email, $new_username) {
+        $sql = "UPDATE Account SET username = ? WHERE email = ?";
+        $stmt = $this->connection->prepare($sql);
+        $stmt->bind_param("ss", $new_username, $email);
+        return $stmt->execute();
     }
 }
 ?>

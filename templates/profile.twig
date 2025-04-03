@@ -27,6 +27,34 @@
 
                 <div class="card mb-4 shadow-sm">
                     <div class="card-body">
+                        <h5 class="card-title">Update Username</h5>
+                        <form method="POST" action="profile.php" class="needs-validation" novalidate>
+                            <input type="hidden" name="action" value="update_username">
+                            <div class="mb-3">
+                                <label for="current_username" class="form-label">Current Username</label>
+                                <input type="username" class="form-control" id="current_username" value="{{ user.username }}" disabled>
+                            </div>
+                            <div class="mb-3">
+                                <label for="new_username" class="form-label">New Username</label>
+                                <input type="username" class="form-control" id="new_username" name="new_username" required>
+                                <div class="invalid-feedback">
+                                    Please enter a valid username.
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="confirm_username" class="form-label">Confirm New Username</label>
+                                <input type="username" class="form-control" id="confirm_username" name="confirm_username" required>
+                                <div class="invalid-feedback">
+                                    Please confirm your new username.
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Update Username</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-body">
                         <h5 class="card-title">Update Email</h5>
                         <form method="POST" action="profile.php" class="needs-validation" novalidate>
                             <input type="hidden" name="action" value="update_email">

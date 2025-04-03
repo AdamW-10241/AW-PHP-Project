@@ -162,6 +162,7 @@ echo $template -> render( [
     'reviews' => $reviews,
     'error' => $error,
     'session_email' => $_SESSION['email'] ?? null,
+    'session_username' => $_SESSION['username'] ?? null,
     'has_reviewed' => $has_reviewed
 ] );
 ?>

@@ -30,14 +30,16 @@ $data = [
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
+    $username = $_POST['username'] ?? '';
 
     try {
         $account = new Account();
-        $result = $account->create($email, $password);
+        $result = $account->create($email, $password, $username);
         
         if ($result['success'] === 1) {
             // Set session and redirect
             $_SESSION['email'] = $email;
+            $_SESSION['username'] = $username;
             header('Location: /index.php');
             exit();
         } else {

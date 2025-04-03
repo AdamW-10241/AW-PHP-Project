@@ -156,7 +156,8 @@ class BoardGame extends Database {
         $reviews_query = "
             SELECT 
                 r.*,
-                u.email as user_name,
+                u.email as email,
+                u.username as username,
                 g.title as game_title
             FROM Review r
             JOIN Account u ON r.user_id = u.id
@@ -252,7 +253,8 @@ class BoardGame extends Database {
         $reviews_query = "
             SELECT 
                 r.*,
-                u.email as user_name
+                u.email as email,
+                u.username as username
             FROM Review r
             JOIN Account u ON r.user_id = u.id
             WHERE r.game_id = ?

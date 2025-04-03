@@ -36,6 +36,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($result['success'] === true) {
             // Set session and redirect only if login was successful
             $_SESSION['email'] = $email;
+
+            $user = new Account();
+            $user -> getUserByEmail($_SESSION['email']);
+
+            $_SESSION['username'] = $user -> getUsername();;
             header('Location: /index.php');
             exit();
         } else {
