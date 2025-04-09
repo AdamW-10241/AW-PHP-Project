@@ -26,10 +26,15 @@ class Account extends Database {
             // Email is not valid
             $this -> errors['email'] = "Email address is not valid.";
         }
-        // Check if email is valid
+        // Check if username is valid
+        if (Validator::validateUsername($username) == false) {
+            // Username is not valid
+            $this -> errors['username'] = "Username is not valid.";
+        }
+        // Check if username already exists
         if ($this -> usernameExists($username)) {
-            // Email is not valid
-            $this -> errors['email'] = "Username already in use.";
+            // Username exists
+            $this -> errors['username_exists'] = "Username already in use.";
         }
         // Check if email is already in account database
         $email_query = "SELECT EXISTS

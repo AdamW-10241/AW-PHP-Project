@@ -19,5 +19,19 @@ class Validator {
             return false;
         }
     }
+
+    public static function validateUsername($username) {
+        // Check length of username
+        if (strlen($username) >= 32) {
+            return false;
+        }
+        // Check if username is not alphanumerirc
+        else if ( ctype_alnum($username) == false ) {
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
 }
 ?>
