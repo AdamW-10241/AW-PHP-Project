@@ -28,7 +28,8 @@
                 <div class="card mb-4 shadow-sm">
                     <div class="card-body">
                         <h5 class="card-title">Update Username</h5>
-                        <form method="POST" action="profile.php" class="needs-validation" novalidate>
+                        <form method="POST" action="/profile.php" class="needs-validation" novalidate>
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                             <input type="hidden" name="action" value="update_username">
                             <div class="mb-3">
                                 <label for="current_username" class="form-label">Current Username</label>
@@ -56,7 +57,8 @@
                 <div class="card mb-4 shadow-sm">
                     <div class="card-body">
                         <h5 class="card-title">Update Email</h5>
-                        <form method="POST" action="profile.php" class="needs-validation" novalidate>
+                        <form method="POST" action="/profile.php" class="needs-validation" novalidate>
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                             <input type="hidden" name="action" value="update_email">
                             <div class="mb-3">
                                 <label for="current_email" class="form-label">Current Email</label>
@@ -84,7 +86,8 @@
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <h5 class="card-title">Change Password</h5>
-                        <form method="POST" action="profile.php" class="needs-validation" novalidate>
+                        <form method="POST" action="/profile.php" class="needs-validation" novalidate>
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                             <input type="hidden" name="action" value="update_password">
                             <div class="mb-3">
                                 <label for="current_password" class="form-label">Current Password</label>

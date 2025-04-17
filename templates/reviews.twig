@@ -25,6 +25,7 @@
                 <div class="card-body">
                     <h2 class="card-title h4 mb-4">Write a Review</h2>
                     <form action="/reviews.php" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <div class="mb-3">
                             <label for="game_id" class="form-label">Select Game</label>
                             <select name="game_id" id="game_id" required class="form-select">
@@ -118,6 +119,7 @@
                         {% if loggedin and review.email == session_email %}
                             <div class="edit-form d-none">
                                 <form action="/reviews.php" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                     <input type="hidden" name="action" value="edit">
                                     <input type="hidden" name="review_id" value="{{ review.id }}">
                                     <div class="mb-3">
@@ -168,6 +170,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <form id="deleteReviewForm" method="POST" action="/reviews.php" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <input type="hidden" name="action" value="delete">
                         <input type="hidden" name="review_id" id="deleteReviewId">
                         <button type="submit" class="btn btn-danger">Delete Review</button>

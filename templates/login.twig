@@ -13,7 +13,8 @@
     <div class="container py-5">
         <div class="row mt-4">
                 <div class="col-md-4 offset-md-4">
-                    <form method="post" action="/login.php" novalidate>
+                    <form method="POST" action="/login.php" class="needs-validation" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         {% for item in errors %}
                             <div class="alert alert-danger" role="alert">
                                 {{ item }}
