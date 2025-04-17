@@ -317,63 +317,81 @@ class BoardGame extends Database {
         return $result->num_rows > 0;
     }
 
-    public function toggleFavorite($user_id, $game_id) {
+    public function toggleFavorite($userId, $gameId) {
         try {
+            // Validate inputs
+            if (!Security::validateInteger($userId) || !Security::validateInteger($gameId)) {
+                throw new Exception("Invalid user ID or game ID");
+            }
+
+            // Sanitize inputs
+            $userId = Security::sanitizeInput($userId);
+            $gameId = Security::sanitizeInput($gameId);
+
             $db = new PDO(
                 "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
                 DB_USER,
                 DB_PASS,
                 [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
             );
-
+            
             // Check if already favorited
-            $check_query = "SELECT id FROM Favourite WHERE user_id = ? AND boardgame_id = ?";
+            $check_query = "SELECT * FROM favorites WHERE user_id = ? AND boardgame_id = ?";
             $check_stmt = $db->prepare($check_query);
-            $check_stmt->execute([$user_id, $game_id]);
-            $is_favorited = $check_stmt->fetchColumn() !== false;
-
-            if ($is_favorited) {
+            $check_stmt->execute([$userId, $gameId]);
+            
+            if ($check_stmt->rowCount() > 0) {
                 // Remove from favorites
-                $delete_query = "DELETE FROM Favourite WHERE user_id = ? AND boardgame_id = ?";
+                $delete_query = "DELETE FROM favorites WHERE user_id = ? AND boardgame_id = ?";
                 $delete_stmt = $db->prepare($delete_query);
-                $delete_stmt->execute([$user_id, $game_id]);
-
+                $delete_stmt->execute([$userId, $gameId]);
+                
                 if ($delete_stmt->rowCount() === 0) {
                     throw new Exception("Failed to remove favorite");
                 }
-
+                
                 return ['action' => 'removed'];
             } else {
                 // Add to favorites
-                $insert_query = "INSERT INTO Favourite (user_id, boardgame_id) VALUES (?, ?)";
+                $insert_query = "INSERT INTO favorites (user_id, boardgame_id) VALUES (?, ?)";
                 $insert_stmt = $db->prepare($insert_query);
-                $insert_stmt->execute([$user_id, $game_id]);
-
+                $insert_stmt->execute([$userId, $gameId]);
+                
                 if ($insert_stmt->rowCount() === 0) {
                     throw new Exception("Failed to add favorite");
                 }
-
+                
                 return ['action' => 'added'];
             }
         } catch (Exception $e) {
             error_log("Error in toggleFavorite: " . $e->getMessage());
-            return false;
+            throw $e;
         }
     }
 
-    public function isFavorited($user_id, $game_id) {
+    public function isFavorited($userId, $gameId) {
         try {
+            // Validate inputs
+            if (!Security::validateInteger($userId) || !Security::validateInteger($gameId)) {
+                throw new Exception("Invalid user ID or game ID");
+            }
+
+            // Sanitize inputs
+            $userId = Security::sanitizeInput($userId);
+            $gameId = Security::sanitizeInput($gameId);
+
             $db = new PDO(
                 "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
                 DB_USER,
                 DB_PASS,
                 [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
             );
-
-            $query = "SELECT id FROM Favourite WHERE user_id = ? AND boardgame_id = ?";
+            
+            $query = "SELECT * FROM favorites WHERE user_id = ? AND boardgame_id = ?";
             $stmt = $db->prepare($query);
-            $stmt->execute([$user_id, $game_id]);
-            return $stmt->fetchColumn() !== false;
+            $stmt->execute([$userId, $gameId]);
+            
+            return $stmt->rowCount() > 0;
         } catch (Exception $e) {
             error_log("Error in isFavorited: " . $e->getMessage());
             return false;

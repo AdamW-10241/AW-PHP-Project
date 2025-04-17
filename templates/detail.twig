@@ -21,7 +21,8 @@
                         <h2>{{ detail.title }}</h2>
                         {% if loggedin %}
                             <form action="/toggle_favorite.php" method="POST" class="d-inline">
-                                <input type="hidden" name="game_id" value="{{ detail.id }}">
+                                <input type="hidden" name="game_id" value="{{ detail.id|e }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                 <button type="submit" class="btn {{ is_favorited ? 'btn-danger' : 'btn-outline-danger' }} btn-lg">
                                     <i class="fas fa-heart"></i>
                                 </button>
@@ -58,10 +59,11 @@
                             <div class="card-body">
                                 <h5 class="card-title">Write a Review</h5>
                                 {% if error %}
-                                    <div class="alert alert-danger">{{ error }}</div>
+                                    <div class="alert alert-danger">{{ error|e }}</div>
                                 {% endif %}
-                                <form action="detail.php?id={{ detail.id }}" method="POST">
-                                    <input type="hidden" name="game_id" value="{{ detail.id }}">
+                                <form action="detail.php?id={{ detail.id|e }}" method="POST">
+                                    <input type="hidden" name="game_id" value="{{ detail.id|e }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                     <div class="mb-3">
                                         <label for="rating" class="form-label">Rating</label>
                                         <select class="form-select" id="rating" name="rating" required>
@@ -123,9 +125,10 @@
                                                 </div>
                                             </div>
                                             <div class="edit-form d-none">
-                                                <form action="/detail.php?id={{ detail.id }}" method="POST" class="edit-review-form">
+                                                <form action="/detail.php?id={{ detail.id|e }}" method="POST" class="edit-review-form">
                                                     <input type="hidden" name="action" value="edit">
-                                                    <input type="hidden" name="review_id" value="{{ review.id }}">
+                                                    <input type="hidden" name="review_id" value="{{ review.id|e }}">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                                     <div class="mb-3">
                                                         <label class="form-label">Rating</label>
                                                         <select name="rating" required class="form-select">
@@ -138,7 +141,7 @@
                                                     </div>
                                                     <div class="mb-3">
                                                         <label class="form-label">Your Review</label>
-                                                        <textarea name="review_text" rows="4" required class="form-control">{{ review.comment }}</textarea>
+                                                        <textarea name="review_text" rows="4" required class="form-control">{{ review.comment|e }}</textarea>
                                                     </div>
                                                     <div class="d-flex gap-2">
                                                         <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
@@ -245,6 +248,7 @@
                     <form id="deleteReviewForm" method="POST" style="display: inline;">
                         <input type="hidden" name="action" value="delete">
                         <input type="hidden" name="review_id" id="deleteReviewId">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <button type="submit" class="btn btn-danger">Delete Review</button>
                     </form>
                 </div>

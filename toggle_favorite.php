@@ -6,6 +6,9 @@ require_once 'config.php';
 require_once 'session_helper.php';
 require_once 'src/BoardGame.php';
 require_once 'src/Account.php';
+require_once 'src/Security.php';
+
+use Adam\AwPhpProject\Security;
 
 // Check if this is an AJAX request
 $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
@@ -21,12 +24,23 @@ if (!isLoggedIn()) {
     exit;
 }
 
-if (!isset($_POST['game_id'])) {
+if (!isset($_POST['game_id']) || !isset($_POST['csrf_token'])) {
     if ($isAjax) {
         header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'error' => 'Game ID not provided']);
+        echo json_encode(['success' => false, 'error' => 'Missing required parameters']);
     } else {
         header('Location: /games.php');
+    }
+    exit;
+}
+
+// Validate CSRF token
+if (!Security::validateToken($_POST['csrf_token'])) {
+    if ($isAjax) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Invalid CSRF token']);
+    } else {
+        header('Location: /games.php?error=' . urlencode('Invalid CSRF token'));
     }
     exit;
 }
@@ -41,7 +55,12 @@ try {
         throw new Exception("User not found");
     }
 
-    $game_id = $_POST['game_id'];
+    // Sanitize input
+    $game_id = Security::sanitizeInput($_POST['game_id']);
+    if (!Security::validateInteger($game_id)) {
+        throw new Exception("Invalid game ID");
+    }
+
     $result = $boardgame->toggleFavorite($user['id'], $game_id);
 
     if ($result) {

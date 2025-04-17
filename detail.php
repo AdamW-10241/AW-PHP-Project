@@ -4,15 +4,19 @@ require_once 'config.php';
 require_once 'vendor/autoload.php';
 require_once 'session_helper.php';
 require_once 'src/BoardGame.php';
+require_once 'src/Account.php';
+require_once 'src/Security.php';
 
 // Classes used in this stage
 use Adam\AwPhpProject\App;
 use Adam\AwPhpProject\BoardGame;
 use Adam\AwPhpProject\Account;
+use Adam\AwPhpProject\Security;
 
 // Create app from App class first to load environment variables
 $app = new App();
 $boardgame = new BoardGame();
+$account = new Account();
 $detail = array();
 $reviews = array();
 $error = null;
@@ -47,7 +51,6 @@ if ( $_GET['id'] ) {
     $has_reviewed = false;
     if (isset($_SESSION['email'])) {
         try {
-            $account = new Account();
             $user = $account->getUserByEmail($_SESSION['email']);
             if ($user) {
                 $has_reviewed = $boardgame->hasUserReviewed($user['id'], $_GET['id']);
@@ -61,7 +64,6 @@ if ( $_GET['id'] ) {
     $is_favorited = false;
     if (isLoggedIn() && isset($_SESSION['email'])) {
         try {
-            $account = new Account();
             $user = $account->getUserByEmail($_SESSION['email']);
             if ($user) {
                 $is_favorited = $boardgame->isFavorited($user['id'], $_GET['id']);
@@ -74,36 +76,71 @@ if ( $_GET['id'] ) {
 
 // Handle review submission, editing, and deletion
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['email'])) {
-    if (isset($_POST['action'])) {
-        if ($_POST['action'] === 'delete') {
-            // Handle delete review
-            $review_id = $_POST['review_id'] ?? null;
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !Security::validateToken($_POST['csrf_token'])) {
+        $error = "Invalid CSRF token";
+    } else {
+        if (isset($_POST['action'])) {
+            if ($_POST['action'] === 'delete') {
+                // Handle delete review
+                $review_id = $_POST['review_id'] ?? null;
 
-            if ($review_id) {
-                try {
-                    $account = new Account();
-                    $user = $account->getUserByEmail($_SESSION['email']);
-                    
-                    if (!$user) {
-                        throw new Exception("User not found");
+                if ($review_id) {
+                    try {
+                        $user = $account->getUserByEmail($_SESSION['email']);
+                        
+                        if (!$user) {
+                            throw new Exception("User not found");
+                        }
+
+                        $boardgame->deleteReview($review_id, $user['id']);
+
+                        // Redirect to the same page to show the updated reviews
+                        header("Location: detail.php?id=" . $_GET['id']);
+                        exit;
+                    } catch (Exception $e) {
+                        $error = "Error deleting review: " . $e->getMessage();
                     }
+                }
+            } elseif ($_POST['action'] === 'edit') {
+                // Handle edit review
+                $review_id = $_POST['review_id'] ?? null;
+                $rating = $_POST['rating'] ?? null;
+                $review_text = $_POST['review_text'] ?? null;
 
-                    $boardgame->deleteReview($review_id, $user['id']);
+                if ($review_id && $rating && $review_text) {
+                    try {
+                        // Validate rating
+                        $rating = (int)$rating;
+                        if ($rating < 1 || $rating > 5) {
+                            throw new Exception("Rating must be between 1 and 5");
+                        }
 
-                    // Redirect to the same page to show the updated reviews
-                    header("Location: detail.php?id=" . $_GET['id']);
-                    exit;
-                } catch (Exception $e) {
-                    $error = "Error deleting review: " . $e->getMessage();
+                        $user = $account->getUserByEmail($_SESSION['email']);
+                        
+                        if (!$user) {
+                            throw new Exception("User not found");
+                        }
+
+                        $boardgame->updateReview($review_id, $user['id'], $rating, $review_text);
+
+                        // Redirect to the same page to show the updated review
+                        header("Location: detail.php?id=" . $_GET['id']);
+                        exit;
+                    } catch (Exception $e) {
+                        $error = "Error updating review: " . $e->getMessage();
+                    }
+                } else {
+                    $error = "Please fill in all fields";
                 }
             }
-        } elseif ($_POST['action'] === 'edit') {
-            // Handle edit review
-            $review_id = $_POST['review_id'] ?? null;
+        } else {
+            // Handle new review submission
+            $game_id = $_POST['game_id'] ?? null;
             $rating = $_POST['rating'] ?? null;
             $review_text = $_POST['review_text'] ?? null;
 
-            if ($review_id && $rating && $review_text) {
+            if ($game_id && $rating && $review_text) {
                 try {
                     // Validate rating
                     $rating = (int)$rating;
@@ -111,56 +148,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['email'])) {
                         throw new Exception("Rating must be between 1 and 5");
                     }
 
-                    $account = new Account();
                     $user = $account->getUserByEmail($_SESSION['email']);
                     
                     if (!$user) {
                         throw new Exception("User not found");
                     }
 
-                    $boardgame->updateReview($review_id, $user['id'], $rating, $review_text);
+                    $boardgame->addReview($user['id'], $game_id, $rating, $review_text);
 
-                    // Redirect to the same page to show the updated review
-                    header("Location: detail.php?id=" . $_GET['id']);
+                    // Redirect to the same page to show the new review
+                    header("Location: detail.php?id=" . $game_id);
                     exit;
                 } catch (Exception $e) {
-                    $error = "Error updating review: " . $e->getMessage();
+                    $error = "Error submitting review: " . $e->getMessage();
                 }
             } else {
                 $error = "Please fill in all fields";
             }
-        }
-    } else {
-        // Handle new review submission
-        $game_id = $_POST['game_id'] ?? null;
-        $rating = $_POST['rating'] ?? null;
-        $review_text = $_POST['review_text'] ?? null;
-
-        if ($game_id && $rating && $review_text) {
-            try {
-                // Validate rating
-                $rating = (int)$rating;
-                if ($rating < 1 || $rating > 5) {
-                    throw new Exception("Rating must be between 1 and 5");
-                }
-
-                $account = new Account();
-                $user = $account->getUserByEmail($_SESSION['email']);
-                
-                if (!$user) {
-                    throw new Exception("User not found");
-                }
-
-                $boardgame->addReview($user['id'], $game_id, $rating, $review_text);
-
-                // Redirect to the same page to show the new review
-                header("Location: detail.php?id=" . $game_id);
-                exit;
-            } catch (Exception $e) {
-                $error = "Error submitting review: " . $e->getMessage();
-            }
-        } else {
-            $error = "Please fill in all fields";
         }
     }
 }
@@ -176,10 +180,12 @@ $page_title = "Detail for " . $detail['title'];
 // Loading the twig template
 $loader = new \Twig\Loader\FilesystemLoader( 'templates' );
 $twig = new \Twig\Environment( $loader );
-$template = $twig -> load( 'detail.twig' );
+
+// Add Security class to Twig globals
+$twig->addGlobal('security', new Security());
 
 // Render the output
-echo $template -> render( [
+echo $twig->render('detail.twig', [
     'detail' => $detail,
     'loggedin' => $isauthenticated,
     'reviews' => $reviews,
@@ -189,5 +195,5 @@ echo $template -> render( [
     'has_reviewed' => $has_reviewed,
     'is_favorited' => $is_favorited,
     'similar_games' => $similarGames
-] );
+]);
 ?>
