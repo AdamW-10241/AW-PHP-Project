@@ -6,6 +6,7 @@ require_once 'vendor/autoload.php';
 
 // Classes used in this page
 use Adam\AwPhpProject\App;
+use Adam\AwPhpProject\Security;
 
 // Create app from App class
 $app = new App();
@@ -22,6 +23,16 @@ $form_errors = [];
 $form_success = false;
 
 if ($_SERVER['REQUEST_METHOD'] == "POST") {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !Security::validateToken($_POST['csrf_token'])) {
+        $errors[] = "Invalid CSRF token";
+        echo $twig->render('contact.twig', [
+            'errors' => $errors,
+            'success' => false
+        ]);
+        exit;
+    }
+    
     // Validate form data
     if (empty($_POST['name'])) {
         $form_errors['name'] = "Name is required";

@@ -7,6 +7,7 @@ require_once 'vendor/autoload.php';
 // Classes used in this page
 use Adam\AwPhpProject\Account;
 use Adam\AwPhpProject\App;
+use Adam\AwPhpProject\Security;
 
 // Create app from App class
 $app = new App();
@@ -33,6 +34,16 @@ $success_message = '';
 $error_message = '';
 
 if ($_SERVER['REQUEST_METHOD'] == "POST") {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !Security::validateToken($_POST['csrf_token'])) {
+        $errors[] = "Invalid CSRF token";
+        echo $twig->render('profile.twig', [
+            'errors' => $errors,
+            'success_message' => $success_message
+        ]);
+        exit;
+    }
+    
     $action = $_POST['action'] ?? '';
 
     if ($action === 'update_username') {

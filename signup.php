@@ -28,6 +28,13 @@ $data = [
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !Security::validateToken($_POST['csrf_token'])) {
+        $errors[] = "Invalid CSRF token";
+        echo $twig->render('signup.twig', ['errors' => $errors]);
+        exit;
+    }
+    
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
     $username = $_POST['username'] ?? '';

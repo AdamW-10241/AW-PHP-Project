@@ -7,6 +7,7 @@ require_once 'session_helper.php';
 use Twig\Loader\FilesystemLoader;
 use Twig\Environment;
 use Adam\AwPhpProject\Account;
+use Adam\AwPhpProject\Security;
 
 // Initialize Twig
 $loader = new FilesystemLoader('templates');
@@ -26,6 +27,13 @@ $data = [
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate CSRF token
+    if (!isset($_POST['csrf_token']) || !Security::validateToken($_POST['csrf_token'])) {
+        $errors[] = "Invalid CSRF token";
+        echo $twig->render('login.twig', ['errors' => $errors]);
+        exit;
+    }
+    
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
 
