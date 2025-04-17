@@ -104,6 +104,7 @@
                 <h2 class="mb-4">Stay Updated</h2>
                 <p class="mb-4">Subscribe to our newsletter for the latest news, reviews, and exclusive offers!</p>
                 <form class="d-flex gap-2" action="/subscribe.php" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <input type="email" name="email" class="form-control" placeholder="Enter your email" required>
                     <button type="submit" class="btn btn-primary">Subscribe</button>
                 </form>
