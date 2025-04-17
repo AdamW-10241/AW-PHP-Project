@@ -17,7 +17,16 @@
                     <img src="assets/cover_images/{{ detail.image }}" class="img-fluid rounded shadow" alt="{{ detail.title }}">
                 </div>
                 <div class="col-md-6">
-                    <h2>{{ detail.title }}</h2>
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h2>{{ detail.title }}</h2>
+                        {% if loggedin %}
+                            <button id="favoriteBtn" 
+                                    class="btn {{ is_favorited ? 'btn-danger' : 'btn-outline-danger' }} toggle-favourite btn-lg"
+                                    data-game-id="{{ detail.id }}">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                        {% endif %}
+                    </div>
                     <p class="lead">{{ detail.description }}</p>
                     <div class="mb-4">
                         <h5>Game Information</h5>
@@ -232,6 +241,40 @@
                 modal.show();
             });
         });
+
+        const favoriteBtn = document.getElementById('favoriteBtn');
+        if (favoriteBtn) {
+            favoriteBtn.addEventListener('click', function() {
+                const gameId = this.dataset.gameId;
+                const isCurrentlyFavorited = this.classList.contains('btn-danger');
+
+                fetch('/toggle_favorite.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'game_id=' + gameId
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.action === 'added') {
+                            this.classList.remove('btn-outline-danger');
+                            this.classList.add('btn-danger');
+                        } else {
+                            this.classList.remove('btn-danger');
+                            this.classList.add('btn-outline-danger');
+                        }
+                    } else {
+                        alert('Failed to update favorite status: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to update favorite status');
+                });
+            });
+        }
     });
     </script>
     {% endblock %}

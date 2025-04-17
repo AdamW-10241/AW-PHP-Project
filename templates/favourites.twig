@@ -1,13 +1,163 @@
 {% extends "base.twig" %}
 
 {% block content %}
-    <div class="container mt-4">
-        <div class="text-center mb-3">
-            <h1 class="display-4 fw-bold text-primary mb-3">Favourites</h1>
-            <p class="lead text-muted">View and manage your favourite board games</p>
-            <div class="d-flex justify-content-center">
-                <div class="border-bottom border-primary" style="width: 100px;"></div>
-            </div>
+<div class="container mt-4">
+    <div class="text-center mb-3">
+        <h1 class="display-4 fw-bold text-primary mb-3">My Favourites</h1>
+        <p class="lead text-muted">Your curated collection of favourite board games</p>
+        <div class="d-flex justify-content-center">
+            <div class="border-bottom border-primary" style="width: 100px;"></div>
         </div>
     </div>
+</div>
+
+<div class="container mt-3">
+    {% if favourites %}
+        <div id="favourites-list" class="row g-2">
+            {% for favourite in favourites %}
+                <div class="col-md-3 mb-1 favourite-item" data-id="{{ favourite.id }}" draggable="true">
+                    <div class="card h-100 d-flex flex-column">
+                        <div class="card-body d-flex flex-column">
+                            <div class="text-center mb-3">
+                                <img src="{{ favourite.image }}"
+                                    class="img-fluid" 
+                                    alt="Board Game Art for {{ favourite.title }}"
+                                    style="min-height: 250px; max-height: 250px; width: auto; object-fit: contain;"
+                                >
+                            </div>
+                            <h5 class="card-title text-center mb-3">
+                                {{ favourite.title }}
+                            </h5>
+                            <div class="flex-grow-1 p-1">
+                                <p class="card-text mb-1">Artists: {{ favourite.artists }}</p>
+                                <p class="card-text mb-1">Designers: {{ favourite.designers }}</p>
+                                <p class="card-text mb-1">Publishers: {{ favourite.publishers }}</p>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-auto">
+                                <span class="badge bg-info">{{ favourite.player_range }} Players</span>
+                                <span class="badge bg-info">{{ favourite.age_range }}</span>
+                                <span class="badge bg-info">{{ favourite.playtime_range }} Min</span>
+                            </div>
+                            <div class="mt-3 d-flex gap-2">
+                                <a href="detail.php?id={{ favourite.id }}" class="btn btn-primary flex-grow-1">View details</a>
+                                <button class="btn btn-outline-danger toggle-favourite" data-game-id="{{ favourite.id }}">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-heart text-muted" style="font-size: 4rem;"></i>
+            </div>
+            <h3 class="text-muted mb-3">No Favourites Yet</h3>
+            <p class="text-muted mb-4">You haven't added any games to your favourites yet.</p>
+            <a href="/games.php" class="btn btn-primary">
+                <i class="fas fa-gamepad me-2"></i>Browse Games
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const favouritesList = document.getElementById('favourites-list');
+    
+    if (favouritesList) {
+        new Sortable(favouritesList, {
+            animation: 150,
+            ghostClass: 'opacity-50',
+            onEnd: function(evt) {
+                const items = Array.from(favouritesList.children).map((item, index) => ({
+                    id: item.dataset.id,
+                    position: index
+                }));
+
+                fetch('/reorder_favourites.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ favourites: items })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        console.error('Error reordering favourites:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+        });
+    }
+
+    // Handle favorite button clicks
+    document.querySelectorAll('.toggle-favourite').forEach(button => {
+        button.addEventListener('click', function() {
+            const gameId = this.dataset.gameId;
+            const gameCard = this.closest('.favourite-item');
+
+            fetch('/toggle_favorite.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'game_id=' + gameId
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.action === 'added') {
+                        this.classList.remove('btn-outline-danger');
+                        this.classList.add('btn-danger');
+                    } else {
+                        // Remove the game card from the DOM
+                        gameCard.remove();
+                        
+                        // If no games left, show the empty message
+                        if (document.querySelectorAll('.favourite-item').length === 0) {
+                            window.location.reload(); // Reload to show the empty state
+                        }
+                    }
+                } else {
+                    alert('Failed to update favourite status: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to update favourite status');
+            });
+        });
+    });
+});
+</script>
+
+<style>
+.favourite-item {
+    transition: transform 0.2s ease;
+}
+
+.favourite-item:hover {
+    transform: translateY(-2px);
+}
+
+.favourite-item.dragging {
+    opacity: 0.5;
+}
+
+.card {
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+</style>
 {% endblock %}

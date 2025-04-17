@@ -3,6 +3,7 @@ session_start();
 require_once 'config.php';
 require_once 'vendor/autoload.php';
 require_once 'session_helper.php';
+require_once 'src/BoardGame.php';
 
 // Classes used in this stage
 use Adam\AwPhpProject\App;
@@ -45,6 +46,34 @@ if ( $_GET['id'] ) {
             }
         } catch (Exception $e) {
             error_log("Error checking user review: " . $e->getMessage());
+        }
+    }
+
+    // Check if the game is favorited by the current user
+    $is_favorited = false;
+    if (isLoggedIn() && isset($_SESSION['email'])) {
+        try {
+            $db = new PDO(
+                "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
+                DB_USER,
+                DB_PASS,
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+            );
+
+            // Get user ID from email
+            $user_stmt = $db->prepare("SELECT id FROM Account WHERE email = ?");
+            $user_stmt->execute([$_SESSION['email']]);
+            $user_id = $user_stmt->fetchColumn();
+
+            if ($user_id) {
+                // Check if game is favorited
+                $favorite_stmt = $db->prepare("SELECT id FROM Favourite WHERE user_id = ? AND boardgame_id = ?");
+                $favorite_stmt->execute([$user_id, $_GET['id']]);
+                $is_favorited = $favorite_stmt->fetchColumn() !== false;
+            }
+        } catch (PDOException $e) {
+            // Log error but don't show it to user
+            error_log("Error checking favorite status: " . $e->getMessage());
         }
     }
 }
@@ -163,6 +192,7 @@ echo $template -> render( [
     'error' => $error,
     'session_email' => $_SESSION['email'] ?? null,
     'session_username' => $_SESSION['username'] ?? null,
-    'has_reviewed' => $has_reviewed
+    'has_reviewed' => $has_reviewed,
+    'is_favorited' => $is_favorited
 ] );
 ?>

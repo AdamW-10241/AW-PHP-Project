@@ -12,21 +12,13 @@ class BoardGame extends Database {
 
     public function get()
     {
-        $get_query = "
+        $sql = "
             SELECT 
-            BoardGame.id AS id,
-            BoardGame.title AS title,
-            BoardGame.tagline AS tagline,
-            BoardGame.year AS year,
-            BoardGame.description AS description,
-            BoardGame.player_range AS player_range,
-            BoardGame.age_range AS age_range,
-            BoardGame.playtime_range AS playtime_range,
-            BoardGame.image AS image,
-            BoardGame.tags AS tags,
-            GROUP_CONCAT(DISTINCT CONCAT(Publisher.name) ORDER BY Publisher.name SEPARATOR ', ') AS publishers,
-            GROUP_CONCAT(DISTINCT CONCAT(Designer.first_name, ' ', Designer.last_name) ORDER BY Designer.last_name SEPARATOR ', ') AS designers,
-            GROUP_CONCAT(DISTINCT CONCAT(Artist.first_name, ' ', Artist.last_name) ORDER BY Artist.last_name SEPARATOR ', ') AS artists
+                BoardGame.*,
+                GROUP_CONCAT(DISTINCT Publisher.name) as publishers,
+                GROUP_CONCAT(DISTINCT CONCAT(Designer.first_name, ' ', Designer.last_name)) as designers,
+                GROUP_CONCAT(DISTINCT CONCAT(Artist.first_name, ' ', Artist.last_name)) as artists,
+                CONCAT(min_playtime, '-', max_playtime) as playtime_range
             FROM BoardGame
             LEFT JOIN BoardGame_Publisher ON BoardGame.id = BoardGame_Publisher.boardgame_id
             LEFT JOIN Publisher ON BoardGame_Publisher.publisher_id = Publisher.publisher_id
@@ -36,22 +28,31 @@ class BoardGame extends Database {
             LEFT JOIN Artist ON BoardGame_Artist.artist_id = Artist.artist_id
             WHERE BoardGame.visible = 1
             GROUP BY 
-                BoardGame.id, 
+                BoardGame.id,
                 BoardGame.title,
                 BoardGame.tagline,
                 BoardGame.year,
                 BoardGame.description,
                 BoardGame.player_range,
                 BoardGame.age_range,
-                BoardGame.playtime_range,
+                BoardGame.min_playtime,
+                BoardGame.max_playtime,
+                BoardGame.min_price,
+                BoardGame.max_price,
                 BoardGame.image,
-                BoardGame.tags;
+                BoardGame.tags,
+                BoardGame.franchise,
+                BoardGame.brand,
+                BoardGame.genre,
+                BoardGame.visible,
+                BoardGame.created_at
+            ORDER BY BoardGame.title ASC
         ";
 
         // Debug: Print the query
-        error_log("Executing query: " . $get_query);
+        error_log("Executing query: " . $sql);
 
-        $statement = $this->connection->prepare($get_query);
+        $statement = $this->connection->prepare($sql);
         $statement->execute();
 
         // Get the results
@@ -75,19 +76,11 @@ class BoardGame extends Database {
     public function getDetail($id) {
         $detail_query = "
             SELECT 
-            BoardGame.id AS id,
-            BoardGame.title AS title,
-            BoardGame.tagline AS tagline,
-            BoardGame.year AS year,
-            BoardGame.description AS description,
-            BoardGame.player_range AS player_range,
-            BoardGame.age_range AS age_range,
-            BoardGame.playtime_range AS playtime_range,
-            BoardGame.image AS image,
-            BoardGame.tags AS tags,
-            GROUP_CONCAT(DISTINCT CONCAT(Publisher.name) ORDER BY Publisher.name SEPARATOR ', ') AS publishers,
-            GROUP_CONCAT(DISTINCT CONCAT(Designer.first_name, ' ', Designer.last_name) ORDER BY Designer.last_name SEPARATOR ', ') AS designers,
-            GROUP_CONCAT(DISTINCT CONCAT(Artist.first_name, ' ', Artist.last_name) ORDER BY Artist.last_name SEPARATOR ', ') AS artists
+                BoardGame.*,
+                GROUP_CONCAT(DISTINCT CONCAT(Publisher.name) ORDER BY Publisher.name SEPARATOR ', ') AS publishers,
+                GROUP_CONCAT(DISTINCT CONCAT(Designer.first_name, ' ', Designer.last_name) ORDER BY Designer.last_name SEPARATOR ', ') AS designers,
+                GROUP_CONCAT(DISTINCT CONCAT(Artist.first_name, ' ', Artist.last_name) ORDER BY Artist.last_name SEPARATOR ', ') AS artists,
+                CONCAT(min_playtime, '-', max_playtime) as playtime_range
             FROM BoardGame
             LEFT JOIN BoardGame_Publisher ON BoardGame.id = BoardGame_Publisher.boardgame_id
             LEFT JOIN Publisher ON BoardGame_Publisher.publisher_id = Publisher.publisher_id
@@ -97,16 +90,24 @@ class BoardGame extends Database {
             LEFT JOIN Artist ON BoardGame_Artist.artist_id = Artist.artist_id
             WHERE BoardGame.visible = 1 AND BoardGame.id = ?
             GROUP BY 
-                BoardGame.id, 
+                BoardGame.id,
                 BoardGame.title,
                 BoardGame.tagline,
                 BoardGame.year,
                 BoardGame.description,
                 BoardGame.player_range,
                 BoardGame.age_range,
-                BoardGame.playtime_range,
+                BoardGame.min_playtime,
+                BoardGame.max_playtime,
+                BoardGame.min_price,
+                BoardGame.max_price,
                 BoardGame.image,
-                BoardGame.tags;
+                BoardGame.tags,
+                BoardGame.franchise,
+                BoardGame.brand,
+                BoardGame.genre,
+                BoardGame.visible,
+                BoardGame.created_at
         ";
 
         // Debug: Print the query
@@ -158,13 +159,27 @@ class BoardGame extends Database {
                 r.*,
                 u.email as email,
                 u.username as username,
-                g.title as game_title
+                g.title as game_title,
+                COALESCE(SUM(rr.rating = 1), 0) as like_count,
+                COALESCE(SUM(rr.rating = -1), 0) as dislike_count,
+                COALESCE((
+                    SELECT rating 
+                    FROM ReviewRating 
+                    WHERE review_id = r.id AND user_id = ?
+                ), 0) as user_rating
             FROM Review r
             JOIN Account u ON r.user_id = u.id
             JOIN BoardGame g ON r.game_id = g.id
+            LEFT JOIN ReviewRating rr ON r.id = rr.review_id
+            GROUP BY r.id
             ORDER BY r.created_at DESC
         ";
+        
+        // Get the user_id from session or use 0 if not logged in
+        $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
+        
         $statement = $this->connection->prepare($reviews_query);
+        $statement->bind_param("i", $user_id);
         $statement->execute();
         $result = $statement->get_result();
         $reviews = [];
@@ -191,27 +206,26 @@ class BoardGame extends Database {
         return $games;
     }
 
-    public function addReview($user_id, $game_id, $rating, $comment) {
+    public function addReview($user_id, $game_id, $star_rating, $comment) {
         // Check if user already reviewed this game
         $check_query = "SELECT id FROM Review WHERE user_id = ? AND game_id = ?";
         $check_stmt = $this->connection->prepare($check_query);
         $check_stmt->bind_param("ii", $user_id, $game_id);
         $check_stmt->execute();
-        if ($check_stmt->get_result()->fetch_assoc()) {
+        $result = $check_stmt->get_result();
+        
+        if ($result->num_rows > 0) {
             throw new Exception("You have already reviewed this game");
         }
 
         // Add the review
-        $insert_query = "
-            INSERT INTO Review (user_id, game_id, rating, comment, created_at)
-            VALUES (?, ?, ?, ?, NOW())
-        ";
+        $insert_query = "INSERT INTO Review (user_id, game_id, rating, comment) VALUES (?, ?, ?, ?)";
         $insert_stmt = $this->connection->prepare($insert_query);
-        $insert_stmt->bind_param("iiis", $user_id, $game_id, $rating, $comment);
-        return $insert_stmt->execute();
+        $insert_stmt->bind_param("iiis", $user_id, $game_id, $star_rating, $comment);
+        $insert_stmt->execute();
     }
 
-    public function updateReview($review_id, $user_id, $rating, $comment) {
+    public function updateReview($review_id, $user_id, $star_rating, $comment) {
         // Verify the review belongs to the user
         $check_query = "SELECT id FROM Review WHERE id = ? AND user_id = ?";
         $check_stmt = $this->connection->prepare($check_query);
@@ -221,15 +235,37 @@ class BoardGame extends Database {
             throw new Exception("You can only edit your own reviews");
         }
 
+        // Build the update query dynamically based on provided values
+        $updates = [];
+        $params = [];
+        $types = "";
+        
+        if ($star_rating !== null) {
+            $updates[] = "rating = ?";
+            $params[] = $star_rating;
+            $types .= "i";
+        }
+        
+        if ($comment !== null) {
+            $updates[] = "comment = ?";
+            $params[] = $comment;
+            $types .= "s";
+        }
+        
+        if (empty($updates)) {
+            throw new Exception("No fields to update");
+        }
+        
+        // Add the review_id and user_id to the parameters
+        $params[] = $review_id;
+        $params[] = $user_id;
+        $types .= "ii";
+        
         // Update the review
-        $update_query = "
-            UPDATE Review 
-            SET rating = ?, comment = ?
-            WHERE id = ? AND user_id = ?
-        ";
+        $update_query = "UPDATE Review SET " . implode(", ", $updates) . " WHERE id = ? AND user_id = ?";
         $update_stmt = $this->connection->prepare($update_query);
-        $update_stmt->bind_param("isii", $rating, $comment, $review_id, $user_id);
-        return $update_stmt->execute();
+        $update_stmt->bind_param($types, ...$params);
+        $update_stmt->execute();
     }
 
     public function deleteReview($review_id, $user_id) {
@@ -278,6 +314,44 @@ class BoardGame extends Database {
         $check_stmt->execute();
         $result = $check_stmt->get_result();
         return $result->num_rows > 0;
+    }
+
+    public function toggleFavorite($user_id, $game_id) {
+        // First check if the game is already favorited
+        $check_query = "SELECT id FROM Favourite WHERE user_id = ? AND game_id = ?";
+        $check_stmt = $this->connection->prepare($check_query);
+        $check_stmt->bind_param("ii", $user_id, $game_id);
+        $check_stmt->execute();
+        $result = $check_stmt->get_result();
+        
+        if ($result->num_rows > 0) {
+            // If already favorited, remove it
+            $delete_query = "DELETE FROM Favourite WHERE user_id = ? AND boardgame_id = ?";
+            $delete_stmt = $this->connection->prepare($delete_query);
+            $delete_stmt->bind_param("ii", $user_id, $game_id);
+            return $delete_stmt->execute() ? ['action' => 'removed'] : false;
+        } else {
+            // If not favorited, add it with the next available position
+            // Get the current max position for this user
+            $max_pos_query = "SELECT COALESCE(MAX(position), -1) as max_pos FROM Favourite WHERE user_id = ?";
+            $max_pos_stmt = $this->connection->prepare($max_pos_query);
+            $max_pos_stmt->bind_param("i", $user_id);
+            $max_pos_stmt->execute();
+            $max_pos = $max_pos_stmt->get_result()->fetch_assoc()['max_pos'] + 1;
+            
+            $insert_query = "INSERT INTO Favourite (user_id, boardgame_id, position) VALUES (?, ?, ?)";
+            $insert_stmt = $this->connection->prepare($insert_query);
+            $insert_stmt->bind_param("iii", $user_id, $game_id, $max_pos);
+            return $insert_stmt->execute() ? ['action' => 'added'] : false;
+        }
+    }
+
+    public function isFavorited($user_id, $game_id) {
+        $query = "SELECT id FROM Favourite WHERE user_id = ? AND game_id = ?";
+        $stmt = $this->connection->prepare($query);
+        $stmt->bind_param("ii", $user_id, $game_id);
+        $stmt->execute();
+        return $stmt->get_result()->num_rows > 0;
     }
 }
 ?>

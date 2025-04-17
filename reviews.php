@@ -9,11 +9,25 @@ use Twig\Environment;
 use Adam\AwPhpProject\BoardGame;
 use Adam\AwPhpProject\Account;
 
+// Initialize BoardGame instance
+$boardGame = new BoardGame();
+
 $redirect = false;
 $error = null;
+$success = null;
+
+// Get user ID if logged in
+$user_id = null;
+if (isLoggedIn()) {
+    $account = new Account();
+    $user = $account->getUserByEmail($_SESSION['email']);
+    if ($user) {
+        $user_id = $user['id'];
+    }
+}
 
 // Handle review submission, editing, and deletion
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isLoggedIn()) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['email'])) {
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'delete') {
             // Handle delete review
@@ -28,17 +42,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isLoggedIn()) {
                         throw new Exception("User not found");
                     }
 
-                    $boardGame = new BoardGame();
                     $boardGame->deleteReview($review_id, $user['id']);
 
-                    // Redirect after successful deletion
+                    // Redirect to the same page to show the updated reviews
                     header("Location: reviews.php");
                     exit;
                 } catch (Exception $e) {
                     $error = "Error deleting review: " . $e->getMessage();
                 }
             }
-        } elseif ($_POST['action'] === 'edit') {
+        } else if ($_POST['action'] === 'edit') {
             // Handle edit review
             $review_id = $_POST['review_id'] ?? null;
             $rating = $_POST['rating'] ?? null;
@@ -59,10 +72,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isLoggedIn()) {
                         throw new Exception("User not found");
                     }
 
-                    $boardGame = new BoardGame();
                     $boardGame->updateReview($review_id, $user['id'], $rating, $review_text);
 
-                    // Redirect after successful update
+                    // Redirect to the same page to show the updated review
                     header("Location: reviews.php");
                     exit;
                 } catch (Exception $e) {
@@ -93,10 +105,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isLoggedIn()) {
                     throw new Exception("User not found");
                 }
 
-                $boardGame = new BoardGame();
                 $boardGame->addReview($user['id'], $game_id, $rating, $review_text);
 
-                // Redirect after successful submission
+                // Redirect to the same page to show the new review
                 header("Location: reviews.php");
                 exit;
             } catch (Exception $e) {
@@ -113,7 +124,6 @@ $loader = new FilesystemLoader('templates');
 $twig = new Environment($loader);
 
 try {
-    $boardGame = new BoardGame();
     $reviews = $boardGame->getReviews();
     $games = $boardGame->getGamesForReview();
 
@@ -123,10 +133,12 @@ try {
         'reviews' => $reviews,
         'games' => $games,
         'error' => $error,
+        'success' => $success,
         'redirect' => $redirect,
         'session_email' => $_SESSION['email'] ?? null,
         'session_username' => $_SESSION['username'] ?? null,
-        'current_page' => 'reviews'
+        'current_page' => 'reviews',
+        'user_id' => $user_id
     ]);
 } catch (Exception $e) {
     die("Error: " . $e->getMessage());

@@ -17,7 +17,7 @@
                     <div class="card h-100 d-flex flex-column">
                         <div class="card-body d-flex flex-column">
                             <div class="text-center mb-3">
-                                <img src="assets/cover_images/{{item.image}}"
+                                <img src="assets/cover_images/board_{{item.id}}.png"
                                     class="img-fluid" 
                                     alt="Board Game Art for {{item.title}}"
                                     style="min-height: 250px; max-height: 250px; width: auto; object-fit: contain;"
@@ -35,6 +35,12 @@
                                 <span class="badge bg-info">{{ item.player_range }} Players</span>
                                 <span class="badge bg-info">{{ item.age_range }}</span>
                                 <span class="badge bg-info">{{ item.playtime_range }} Min</span>
+                                {% if loggedin %}
+                                    <button class="btn btn-sm toggle-favourite {{ item.is_favorited ? 'btn-danger' : 'btn-outline-danger' }}" 
+                                            data-game-id="{{ item.id }}">
+                                        <i class="fas fa-heart"></i>
+                                    </button>
+                                {% endif %}
                             </div>
                             <div class="mt-3">
                                 <a href="detail.php?id={{item.id}}" class="btn btn-primary w-100">View details</a>
@@ -45,4 +51,44 @@
             {% endfor %}
         </div>
     </div>
+
+    {% block scripts %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle favorite button clicks
+        document.querySelectorAll('.toggle-favourite').forEach(button => {
+            button.addEventListener('click', function() {
+                const gameId = this.dataset.gameId;
+                const isCurrentlyFavorited = this.classList.contains('btn-danger');
+
+                fetch('/toggle_favorite.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'game_id=' + gameId
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.action === 'added') {
+                            this.classList.remove('btn-outline-danger');
+                            this.classList.add('btn-danger');
+                        } else {
+                            this.classList.remove('btn-danger');
+                            this.classList.add('btn-outline-danger');
+                        }
+                    } else {
+                        alert('Failed to update favourite status: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to update favourite status');
+                });
+            });
+        });
+    });
+    </script>
+    {% endblock %}
 {% endblock %}
