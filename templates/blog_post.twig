@@ -1,0 +1,138 @@
+{% extends "base.twig" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <!-- Blog Post -->
+            <article class="card mb-4">
+                {% if post.image_url %}
+                    <img src="{{ post.image_url }}" class="card-img-top" alt="{{ post.title }}">
+                {% endif %}
+                <div class="card-body">
+                    <h1 class="card-title">{{ post.title }}</h1>
+                    <p class="text-muted">Posted by {{ post.author_name }} on {{ post.created_at|date("F j, Y") }}</p>
+                    <div class="card-text">
+                        {{ post.content|raw }}
+                    </div>
+                </div>
+            </article>
+
+            <!-- Comments Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Comments</h3>
+                </div>
+                <div class="card-body">
+                    {% if comments %}
+                        {% for comment in comments %}
+                            <div class="comment mb-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ comment.username }}</h6>
+                                        <small class="text-muted">{{ comment.created_at|date("F j, Y, g:i a") }}</small>
+                                    </div>
+                                    <div class="comment-rating">
+                                        {% if loggedin %}
+                                            <button class="btn btn-sm rate-comment {{ comment.user_rating == 1 ? 'btn-success' : 'btn-outline-success' }}"
+                                                    data-comment-id="{{ comment.id }}"
+                                                    data-rating="1">
+                                                <i class="fas fa-thumbs-up"></i>
+                                            </button>
+                                            <button class="btn btn-sm rate-comment {{ comment.user_rating == -1 ? 'btn-danger' : 'btn-outline-danger' }}"
+                                                    data-comment-id="{{ comment.id }}"
+                                                    data-rating="-1">
+                                                <i class="fas fa-thumbs-down"></i>
+                                            </button>
+                                        {% endif %}
+                                        <span class="badge bg-secondary ms-2">
+                                            {{ comment.rating > 0 ? '+' : '' }}{{ comment.rating }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <p class="mt-2">{{ comment.content }}</p>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No comments yet. Be the first to comment!</p>
+                    {% endif %}
+
+                    {% if loggedin %}
+                        <form method="POST" action="/add_comment.php" class="mt-4">
+                            <input type="hidden" name="post_id" value="{{ post.id }}">
+                            <div class="mb-3">
+                                <label for="comment" class="form-label">Add a Comment</label>
+                                <textarea class="form-control" id="comment" name="content" rows="3" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit Comment</button>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-info mt-4">
+                            Please <a href="/login.php">login</a> to leave a comment.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle comment rating clicks
+    document.querySelectorAll('.rate-comment').forEach(button => {
+        button.addEventListener('click', function() {
+            const commentId = this.dataset.commentId;
+            const rating = parseInt(this.dataset.rating);
+            const isPositive = rating === 1;
+            const isNegative = rating === -1;
+
+            fetch('/rate_comment.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `comment_id=${commentId}&rating=${rating}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the UI
+                    const ratingBadge = this.closest('.comment-rating').querySelector('.badge');
+                    ratingBadge.textContent = (data.new_rating > 0 ? '+' : '') + data.new_rating;
+
+                    // Update button states
+                    const positiveBtn = this.closest('.comment-rating').querySelector('[data-rating="1"]');
+                    const negativeBtn = this.closest('.comment-rating').querySelector('[data-rating="-1"]');
+
+                    if (data.user_rating === 1) {
+                        positiveBtn.classList.remove('btn-outline-success');
+                        positiveBtn.classList.add('btn-success');
+                        negativeBtn.classList.remove('btn-danger');
+                        negativeBtn.classList.add('btn-outline-danger');
+                    } else if (data.user_rating === -1) {
+                        positiveBtn.classList.remove('btn-success');
+                        positiveBtn.classList.add('btn-outline-success');
+                        negativeBtn.classList.remove('btn-outline-danger');
+                        negativeBtn.classList.add('btn-danger');
+                    } else {
+                        positiveBtn.classList.remove('btn-success');
+                        positiveBtn.classList.add('btn-outline-success');
+                        negativeBtn.classList.remove('btn-danger');
+                        negativeBtn.classList.add('btn-outline-danger');
+                    }
+                } else {
+                    alert('Failed to update rating: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to update rating');
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 
