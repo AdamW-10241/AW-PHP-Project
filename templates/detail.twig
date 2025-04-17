@@ -20,11 +20,12 @@
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <h2>{{ detail.title }}</h2>
                         {% if loggedin %}
-                            <button id="favoriteBtn" 
-                                    class="btn {{ is_favorited ? 'btn-danger' : 'btn-outline-danger' }} toggle-favourite btn-lg"
-                                    data-game-id="{{ detail.id }}">
-                                <i class="fas fa-heart"></i>
-                            </button>
+                            <form action="/toggle_favorite.php" method="POST" class="d-inline">
+                                <input type="hidden" name="game_id" value="{{ detail.id }}">
+                                <button type="submit" class="btn {{ is_favorited ? 'btn-danger' : 'btn-outline-danger' }} btn-lg">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            </form>
                         {% endif %}
                     </div>
                     <p class="lead">{{ detail.description }}</p>
@@ -37,7 +38,7 @@
                             <li><strong>Year:</strong> {{ detail.year }}</li>
                             <li><strong>Players:</strong> {{ detail.player_range }}</li>
                             <li><strong>Age:</strong> {{ detail.age_range }}</li>
-                            <li><strong>Playtime:</strong> {{ detail.playtime_range }}</li>
+                            <li><strong>Playtime:</strong> {{ detail.playtime_range }} min.</li>
                         </ul>
                     </div>
                     <a href="/games.php" class="btn btn-primary">Back to Games</a>
@@ -186,6 +187,46 @@
                 </div>
             </div>
         </div>
+
+        <!-- Similar Games Section -->
+        {% if similar_games|length > 0 %}
+        <div class="container mb-5">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4">You May Also Like...</h2>
+                    <div class="row">
+                        {% for game in similar_games %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                <img src="assets/cover_images/{{ game.image }}" class="card-img-top" alt="{{ game.title }}">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ game.title }}</h5>
+                                    <p class="card-text">
+                                        <small class="text-muted">
+                                            <i class="fas fa-users me-1"></i> {{ game.player_range }} players<br>
+                                            <i class="fas fa-clock me-1"></i> {{ game.playtime_range }} min.<br>
+                                            <i class="fas fa-child me-1"></i> Age {{ game.age_range }}
+                                        </small>
+                                    </p>
+                                    <a href="/detail.php?id={{ game.id }}" class="btn btn-primary">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Debug output -->
+        <div class="container mb-5">
+            <div class="row">
+                <div class="col-12">
+                    <p class="text-muted">No similar games found. Debug info: {{ similar_games|json_encode }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </main>
 
     <!-- Delete Confirmation Modal -->
@@ -214,6 +255,13 @@
     {% block scripts %}
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Remove all favorites-related code
+        const favouriteButtons = document.querySelectorAll('.toggle-favourite');
+        favouriteButtons.forEach(button => {
+            button.removeEventListener('click', null);
+            button.removeEventListener('touchstart', null);
+        });
+
         // Handle edit button click
         document.querySelectorAll('.edit-review').forEach(button => {
             button.addEventListener('click', function() {
@@ -241,40 +289,6 @@
                 modal.show();
             });
         });
-
-        const favoriteBtn = document.getElementById('favoriteBtn');
-        if (favoriteBtn) {
-            favoriteBtn.addEventListener('click', function() {
-                const gameId = this.dataset.gameId;
-                const isCurrentlyFavorited = this.classList.contains('btn-danger');
-
-                fetch('/toggle_favorite.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: 'game_id=' + gameId
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        if (data.action === 'added') {
-                            this.classList.remove('btn-outline-danger');
-                            this.classList.add('btn-danger');
-                        } else {
-                            this.classList.remove('btn-danger');
-                            this.classList.add('btn-outline-danger');
-                        }
-                    } else {
-                        alert('Failed to update favorite status: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Failed to update favorite status');
-                });
-            });
-        }
     });
     </script>
     {% endblock %}

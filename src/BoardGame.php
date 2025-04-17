@@ -3,6 +3,7 @@ namespace Adam\AwPhpProject;
 
 use \Exception;
 use Adam\AwPhpProject\Database;
+use PDO;
 
 class BoardGame extends Database {
     public function __construct()
@@ -317,41 +318,200 @@ class BoardGame extends Database {
     }
 
     public function toggleFavorite($user_id, $game_id) {
-        // First check if the game is already favorited
-        $check_query = "SELECT id FROM Favourite WHERE user_id = ? AND game_id = ?";
-        $check_stmt = $this->connection->prepare($check_query);
-        $check_stmt->bind_param("ii", $user_id, $game_id);
-        $check_stmt->execute();
-        $result = $check_stmt->get_result();
-        
-        if ($result->num_rows > 0) {
-            // If already favorited, remove it
-            $delete_query = "DELETE FROM Favourite WHERE user_id = ? AND boardgame_id = ?";
-            $delete_stmt = $this->connection->prepare($delete_query);
-            $delete_stmt->bind_param("ii", $user_id, $game_id);
-            return $delete_stmt->execute() ? ['action' => 'removed'] : false;
-        } else {
-            // If not favorited, add it with the next available position
-            // Get the current max position for this user
-            $max_pos_query = "SELECT COALESCE(MAX(position), -1) as max_pos FROM Favourite WHERE user_id = ?";
-            $max_pos_stmt = $this->connection->prepare($max_pos_query);
-            $max_pos_stmt->bind_param("i", $user_id);
-            $max_pos_stmt->execute();
-            $max_pos = $max_pos_stmt->get_result()->fetch_assoc()['max_pos'] + 1;
-            
-            $insert_query = "INSERT INTO Favourite (user_id, boardgame_id, position) VALUES (?, ?, ?)";
-            $insert_stmt = $this->connection->prepare($insert_query);
-            $insert_stmt->bind_param("iii", $user_id, $game_id, $max_pos);
-            return $insert_stmt->execute() ? ['action' => 'added'] : false;
+        try {
+            $db = new PDO(
+                "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
+                DB_USER,
+                DB_PASS,
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+            );
+
+            // Check if already favorited
+            $check_query = "SELECT id FROM Favourite WHERE user_id = ? AND boardgame_id = ?";
+            $check_stmt = $db->prepare($check_query);
+            $check_stmt->execute([$user_id, $game_id]);
+            $is_favorited = $check_stmt->fetchColumn() !== false;
+
+            if ($is_favorited) {
+                // Remove from favorites
+                $delete_query = "DELETE FROM Favourite WHERE user_id = ? AND boardgame_id = ?";
+                $delete_stmt = $db->prepare($delete_query);
+                $delete_stmt->execute([$user_id, $game_id]);
+
+                if ($delete_stmt->rowCount() === 0) {
+                    throw new Exception("Failed to remove favorite");
+                }
+
+                return ['action' => 'removed'];
+            } else {
+                // Add to favorites
+                $insert_query = "INSERT INTO Favourite (user_id, boardgame_id) VALUES (?, ?)";
+                $insert_stmt = $db->prepare($insert_query);
+                $insert_stmt->execute([$user_id, $game_id]);
+
+                if ($insert_stmt->rowCount() === 0) {
+                    throw new Exception("Failed to add favorite");
+                }
+
+                return ['action' => 'added'];
+            }
+        } catch (Exception $e) {
+            error_log("Error in toggleFavorite: " . $e->getMessage());
+            return false;
         }
     }
 
     public function isFavorited($user_id, $game_id) {
-        $query = "SELECT id FROM Favourite WHERE user_id = ? AND game_id = ?";
-        $stmt = $this->connection->prepare($query);
-        $stmt->bind_param("ii", $user_id, $game_id);
-        $stmt->execute();
-        return $stmt->get_result()->num_rows > 0;
+        try {
+            $db = new PDO(
+                "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
+                DB_USER,
+                DB_PASS,
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+            );
+
+            $query = "SELECT id FROM Favourite WHERE user_id = ? AND boardgame_id = ?";
+            $stmt = $db->prepare($query);
+            $stmt->execute([$user_id, $game_id]);
+            return $stmt->fetchColumn() !== false;
+        } catch (Exception $e) {
+            error_log("Error in isFavorited: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function getSimilarGames($gameId, $limit = 3) {
+        try {
+            error_log("=== Starting getSimilarGames for gameId: $gameId ===");
+            
+            // First get the current game's details
+            $currentGame = $this->getDetail($gameId);
+            if (!$currentGame) {
+                error_log("ERROR: No current game found for ID: " . $gameId);
+                return [];
+            }
+
+            error_log("Current game details: " . print_r($currentGame, true));
+
+            // Extract player range (e.g., "2-4" -> [2,4])
+            $playerRange = explode('-', $currentGame['player_range'] ?? '0-0');
+            $minPlayers = (int)($playerRange[0] ?? 0);
+            $maxPlayers = (int)($playerRange[1] ?? 0);
+            error_log("Player range: $minPlayers-$maxPlayers");
+
+            // Extract playtime range from min_playtime and max_playtime
+            $minPlaytime = (int)($currentGame['min_playtime'] ?? 0);
+            $maxPlaytime = (int)($currentGame['max_playtime'] ?? 0);
+            error_log("Playtime range: $minPlaytime-$maxPlaytime");
+
+            // Extract age range (e.g., "8+" -> 8)
+            $minAge = (int)str_replace('+', '', $currentGame['age_range'] ?? '0+');
+            error_log("Age range: $minAge+");
+
+            // Extract designers, publishers, and genre
+            $designers = array_map('trim', explode(',', $currentGame['designers'] ?? ''));
+            $publishers = array_map('trim', explode(',', $currentGame['publishers'] ?? ''));
+            $genre = $currentGame['genre'] ?? '';
+            
+            error_log("Genre: $genre");
+            error_log("Designers: " . implode(', ', $designers));
+            error_log("Publishers: " . implode(', ', $publishers));
+            
+            // Get the first designer and publisher for matching
+            $firstDesigner = $designers[0] ?? '';
+            $firstPublisher = $publishers[0] ?? '';
+
+            // Query that matches games with similar characteristics
+            $query = "SELECT DISTINCT b.id, b.title, b.image, b.player_range, 
+                            CONCAT(b.min_playtime, '-', b.max_playtime) as playtime_range, 
+                            b.age_range, b.genre
+                     FROM BoardGame b
+                     INNER JOIN BoardGame_Designer bgd ON b.id = bgd.boardgame_id
+                     INNER JOIN Designer d ON bgd.designer_id = d.designer_id
+                     INNER JOIN BoardGame_Publisher bgp ON b.id = bgp.boardgame_id
+                     INNER JOIN Publisher p ON bgp.publisher_id = p.publisher_id
+                     WHERE b.id != ?
+                     AND b.visible = 1
+                     AND (
+                         b.genre = ?
+                         OR b.player_range LIKE ?
+                         OR b.player_range LIKE ?
+                         OR (b.min_playtime BETWEEN ? AND ?)
+                         OR (b.max_playtime BETWEEN ? AND ?)
+                         OR b.age_range LIKE ?
+                         OR d.first_name LIKE ?
+                         OR d.last_name LIKE ?
+                         OR p.name LIKE ?
+                     )
+                     ORDER BY RAND()
+                     LIMIT ?";
+
+            error_log("SQL Query: " . $query);
+            
+            $stmt = $this->connection->prepare($query);
+            if (!$stmt) {
+                error_log("ERROR: Failed to prepare statement: " . $this->connection->error);
+                return [];
+            }
+            
+            // Prepare the parameters
+            $playerRange1 = "%$minPlayers-%";
+            $playerRange2 = "%-$maxPlayers%";
+            $ageRange = "%$minAge+%";
+            $designerPattern = "%$firstDesigner%";
+            $publisherPattern = "%$firstPublisher%";
+            
+            // Create separate variables for the second set of playtime parameters
+            $minPlaytime2 = $minPlaytime;
+            $maxPlaytime2 = $maxPlaytime;
+            
+            error_log("Parameters: gameId=$gameId, genre=$genre, playerRange1=$playerRange1, playerRange2=$playerRange2, minPlaytime=$minPlaytime, maxPlaytime=$maxPlaytime, minPlaytime2=$minPlaytime2, maxPlaytime2=$maxPlaytime2, ageRange=$ageRange, designerPattern=$designerPattern, publisherPattern=$publisherPattern, limit=$limit");
+            
+            // Bind parameters - exactly 13 parameters
+            $stmt->bind_param("isssiiiiissii", 
+                $gameId, 
+                $genre,
+                $playerRange1,
+                $playerRange2,
+                $minPlaytime,
+                $maxPlaytime,
+                $minPlaytime2,
+                $maxPlaytime2,
+                $ageRange,
+                $designerPattern,
+                $designerPattern,
+                $publisherPattern,
+                $limit
+            );
+            
+            $executeResult = $stmt->execute();
+            if (!$executeResult) {
+                error_log("ERROR: Failed to execute query: " . $stmt->error);
+                return [];
+            }
+            
+            $result = $stmt->get_result();
+            if (!$result) {
+                error_log("ERROR: Failed to get result: " . $stmt->error);
+                return [];
+            }
+            
+            $results = [];
+            while ($row = $result->fetch_assoc()) {
+                $results[] = $row;
+            }
+            
+            error_log("Found " . count($results) . " similar games");
+            if (count($results) > 0) {
+                error_log("Similar games details: " . print_r($results, true));
+            }
+            
+            return $results;
+        } catch (Exception $e) {
+            error_log("EXCEPTION in getSimilarGames: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            return [];
+        }
     }
 }
 ?>

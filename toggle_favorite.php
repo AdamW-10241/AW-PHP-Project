@@ -5,68 +5,61 @@ error_reporting(E_ERROR | E_PARSE);
 require_once 'config.php';
 require_once 'session_helper.php';
 require_once 'src/BoardGame.php';
+require_once 'src/Account.php';
 
-// Set headers before any output
-header('Content-Type: application/json');
+// Check if this is an AJAX request
+$isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+          strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
 
 if (!isLoggedIn()) {
-    echo json_encode(['success' => false, 'error' => 'Not logged in']);
+    if ($isAjax) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Not logged in']);
+    } else {
+        header('Location: /login.php');
+    }
     exit;
 }
 
 if (!isset($_POST['game_id'])) {
-    echo json_encode(['success' => false, 'error' => 'Game ID not provided']);
+    if ($isAjax) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Game ID not provided']);
+    } else {
+        header('Location: /games.php');
+    }
     exit;
 }
 
 try {
-    $db = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
-        DB_USER,
-        DB_PASS,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
-
+    $boardgame = new \Adam\AwPhpProject\BoardGame();
+    $account = new \Adam\AwPhpProject\Account();
+    
     // Get user ID
-    $user_stmt = $db->prepare("SELECT id FROM Account WHERE email = ?");
-    $user_stmt->execute([$_SESSION['email']]);
-    $user_id = $user_stmt->fetchColumn();
-
-    if (!$user_id) {
+    $user = $account->getUserByEmail($_SESSION['email']);
+    if (!$user) {
         throw new Exception("User not found");
     }
 
     $game_id = $_POST['game_id'];
+    $result = $boardgame->toggleFavorite($user['id'], $game_id);
 
-    // Check if already favorited
-    $check_query = "SELECT id FROM Favourite WHERE user_id = ? AND boardgame_id = ?";
-    $check_stmt = $db->prepare($check_query);
-    $check_stmt->execute([$user_id, $game_id]);
-    $is_favorited = $check_stmt->fetchColumn() !== false;
-
-    if ($is_favorited) {
-        // Remove from favorites
-        $delete_query = "DELETE FROM Favourite WHERE user_id = ? AND boardgame_id = ?";
-        $delete_stmt = $db->prepare($delete_query);
-        $delete_stmt->execute([$user_id, $game_id]);
-
-        if ($delete_stmt->rowCount() === 0) {
-            throw new Exception("Failed to remove favorite");
+    if ($result) {
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'action' => $result['action']]);
+        } else {
+            // Redirect back to the detail page
+            header('Location: /detail.php?id=' . $game_id);
         }
-
-        echo json_encode(['success' => true, 'action' => 'removed']);
     } else {
-        // Add to favorites
-        $insert_query = "INSERT INTO Favourite (user_id, boardgame_id) VALUES (?, ?)";
-        $insert_stmt = $db->prepare($insert_query);
-        $insert_stmt->execute([$user_id, $game_id]);
-
-        if ($insert_stmt->rowCount() === 0) {
-            throw new Exception("Failed to add favorite");
-        }
-
-        echo json_encode(['success' => true, 'action' => 'added']);
+        throw new Exception("Failed to toggle favorite");
     }
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    if ($isAjax) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    } else {
+        header('Location: /detail.php?id=' . $_POST['game_id'] . '&error=' . urlencode($e->getMessage()));
+    }
 } 

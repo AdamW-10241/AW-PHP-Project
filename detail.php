@@ -35,6 +35,14 @@ if ( $_GET['id'] ) {
         error_log("Error fetching reviews: " . $e->getMessage());
     }
 
+    // Get similar games
+    try {
+        $similarGames = $boardgame->getSimilarGames($_GET['id']);
+    } catch (Exception $e) {
+        error_log("Error fetching similar games: " . $e->getMessage());
+        $similarGames = [];
+    }
+
     // Check if user has already reviewed this game
     $has_reviewed = false;
     if (isset($_SESSION['email'])) {
@@ -53,26 +61,12 @@ if ( $_GET['id'] ) {
     $is_favorited = false;
     if (isLoggedIn() && isset($_SESSION['email'])) {
         try {
-            $db = new PDO(
-                "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
-                DB_USER,
-                DB_PASS,
-                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-            );
-
-            // Get user ID from email
-            $user_stmt = $db->prepare("SELECT id FROM Account WHERE email = ?");
-            $user_stmt->execute([$_SESSION['email']]);
-            $user_id = $user_stmt->fetchColumn();
-
-            if ($user_id) {
-                // Check if game is favorited
-                $favorite_stmt = $db->prepare("SELECT id FROM Favourite WHERE user_id = ? AND boardgame_id = ?");
-                $favorite_stmt->execute([$user_id, $_GET['id']]);
-                $is_favorited = $favorite_stmt->fetchColumn() !== false;
+            $account = new Account();
+            $user = $account->getUserByEmail($_SESSION['email']);
+            if ($user) {
+                $is_favorited = $boardgame->isFavorited($user['id'], $_GET['id']);
             }
-        } catch (PDOException $e) {
-            // Log error but don't show it to user
+        } catch (Exception $e) {
             error_log("Error checking favorite status: " . $e->getMessage());
         }
     }
@@ -193,6 +187,7 @@ echo $template -> render( [
     'session_email' => $_SESSION['email'] ?? null,
     'session_username' => $_SESSION['username'] ?? null,
     'has_reviewed' => $has_reviewed,
-    'is_favorited' => $is_favorited
+    'is_favorited' => $is_favorited,
+    'similar_games' => $similarGames
 ] );
 ?>
