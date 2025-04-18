@@ -53,18 +53,20 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
     }
 }
 
-// Loading the twig template
+// Initialize Twig
 $loader = new \Twig\Loader\FilesystemLoader('templates');
 $twig = new \Twig\Environment($loader);
-$template = $twig->load('contact.twig');
 
-// Render the output
-echo $template->render([
-    'website_name' => $site_name,
-    'errors' => $form_errors,
-    'success' => $form_success,
+// Add Security class to Twig globals
+$twig->addGlobal('security', new Security());
+
+// Render the template
+echo $twig->render('contact.twig', [
     'loggedin' => $isauthenticated,
-    'current_page' => 'contact'
+    'is_admin' => isAdmin(),
+    'current_page' => 'contact',
+    'form_errors' => $form_errors,
+    'form_success' => $form_success
 ]);
 ?>
 

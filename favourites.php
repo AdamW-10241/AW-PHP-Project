@@ -74,6 +74,7 @@ try {
     echo $twig->render('favourites.twig', [
         'favourites' => $favourites,
         'loggedin' => isLoggedIn(),
+        'is_admin' => isAdmin(),
         'csrf_token' => $csrf_token
     ]);
 } catch (Exception $e) {
@@ -81,7 +82,8 @@ try {
     echo $twig->render('favourites.twig', [
         'error' => 'Error loading favourites: ' . $e->getMessage(),
         'favourites' => [],
-        'loggedin' => isLoggedIn()
+        'loggedin' => isLoggedIn(),
+        'is_admin' => isAdmin()
     ]);
 }
 ?>

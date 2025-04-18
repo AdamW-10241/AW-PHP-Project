@@ -17,12 +17,15 @@ if ( isset( $_SESSION['email'] ) ) {
 // Loading the twig template
 $loader = new \Twig\Loader\FilesystemLoader( 'templates' );
 $twig = new \Twig\Environment( $loader );
-$template = $twig -> load( 'blog.twig' );
+
+// Add Security class to Twig globals
+$twig->addGlobal('security', new Security());
 
 // Render the output
-echo $template -> render( [
+echo $twig->render('blog.twig', [
     'loggedin' => $isauthenticated,
+    'is_admin' => isAdmin(),
     'current_page' => 'blog'
-] );
+]);
 ?>
 

@@ -7,6 +7,7 @@ require_once 'config.php';
 // Classes used in this stage
 use Adam\AwPhpProject\App;
 use Adam\AwPhpProject\BoardGame;
+use Adam\AwPhpProject\Account;
 
 // Create app from App class
 $app = new App();
@@ -15,8 +16,15 @@ $items = $boardgame->get();
 
 // Checking if the user is logged in
 $isauthenticated = false;
+$is_admin = false;
 if (isset($_SESSION['email']) && !empty($_SESSION['email'])) {
     $isauthenticated = true;
+    
+    // Check if user is admin
+    $account = new Account();
+    if ($account->getUserByEmail($_SESSION['email'])) {
+        $is_admin = $account->isAdmin();
+    }
     
     // Get user's favorites if logged in
     try {
@@ -61,5 +69,6 @@ $template = $twig->load('games.twig');
 echo $template->render([
     'items' => $items,
     'loggedin' => $isauthenticated,
+    'is_admin' => $is_admin,
     'current_page' => 'games'
 ]); 

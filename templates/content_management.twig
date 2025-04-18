@@ -1,0 +1,126 @@
+{% extends "base.twig" %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="text-center mb-3">
+            <h1 class="display-4 fw-bold text-primary mb-3">Content Management</h1>
+            <p class="lead text-muted">Add new games to the catalog</p>
+            <div class="d-flex justify-content-center">
+                <div class="border-bottom border-primary" style="width: 100px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </div>
+                {% endif %}
+
+                {% if success %}
+                    <div class="alert alert-success" role="alert">
+                        {{ success }}
+                    </div>
+                {% endif %}
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h2>Add New Game</h2>
+                        <form method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="csrf_token" value="{{ security.generateToken() }}">
+                            <input type="hidden" name="action" value="create">
+
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Title</label>
+                                <input type="text" class="form-control" id="title" name="title" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="min_players" class="form-label">Min Players</label>
+                                        <input type="number" class="form-control" id="min_players" name="min_players" min="1" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="max_players" class="form-label">Max Players</label>
+                                        <input type="number" class="form-control" id="max_players" name="max_players" min="1" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="playtime" class="form-label">Playtime (minutes)</label>
+                                        <input type="number" class="form-control" id="playtime" name="playtime" min="1" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="age" class="form-label">Minimum Age</label>
+                                        <input type="number" class="form-control" id="age" name="age" min="1" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="price" class="form-label">Price</label>
+                                <input type="number" class="form-control" id="price" name="price" min="0" step="0.01" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="image" class="form-label">Game Image</label>
+                                <input type="file" class="form-control" id="image" name="image" accept="image/*" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Add Game</button>
+                        </form>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h2>Existing Games</h2>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Players</th>
+                                        <th>Playtime</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for game in games %}
+                                    <tr>
+                                        <td>{{ game.title }}</td>
+                                        <td>{{ game.min_players }}-{{ game.max_players }}</td>
+                                        <td>{{ game.playtime }} min</td>
+                                        <td>
+                                            <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this game?');">
+                                                <input type="hidden" name="csrf_token" value="{{ security.generateToken() }}">
+                                                <input type="hidden" name="action" value="delete">
+                                                <input type="hidden" name="game_id" value="{{ game.id }}">
+                                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %} 
