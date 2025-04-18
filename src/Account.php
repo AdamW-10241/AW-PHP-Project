@@ -92,7 +92,7 @@ class Account extends Database {
     }
 
     public function getUserByEmail($email) {
-        $query = "SELECT id, email, username, password, is_admin FROM Account WHERE email = ?";
+        $query = "SELECT id, email, username, password, is_admin, active FROM Account WHERE email = ?";
         $statement = $this->connection->prepare($query);
         if (!$statement) {
             error_log("Failed to prepare statement: " . $this->connection->error);
@@ -114,7 +114,8 @@ class Account extends Database {
             $this->username = $user['username'];
             $this->password = $user['password'];
             $this->is_admin = (bool)$user['is_admin'];
-            error_log("User found: ID=" . $this->id . ", Email=" . $this->email . ", Admin=" . $this->is_admin);
+            $this->active = (bool)$user['active'];
+            error_log("User found: ID=" . $this->id . ", Email=" . $this->email . ", Admin=" . $this->is_admin . ", Active=" . $this->active);
             return true;
         }
         
@@ -140,7 +141,7 @@ class Account extends Database {
 
     public function isAdmin(): bool
     {
-        return $this->is_admin === 1;
+        return $this->is_admin == 1 || $this->is_admin === true;
     }
 
     public function setAdmin($email, $is_admin) {
@@ -403,7 +404,7 @@ class Account extends Database {
 
     public function isActive(): bool
     {
-        return $this->active === 1;
+        return $this->active == 1 || $this->active === true;
     }
 }
 ?>
