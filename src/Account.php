@@ -8,18 +8,25 @@ use Adam\AwPhpProject\Validator;
 class Account extends Database {
     public $errors = [];
     public $response = [];
+    private $id;
+    private $email;
+    private $username;
+    private $password;
+    private $is_admin;
+    private $active;
+
     public function __construct()
     {
         parent::__construct();
     }
 
-    public function create($email, $password, $username)
+    public function create($email, $password, $username, $is_admin = false)
     {
         // Perform query to create an account with email and password
         // Create the insert query
         $insert_query = "INSERT INTO 
-        Account( email, password, username, reset, active, last_seen, created ) 
-        VALUES ( ?, ?, ?, ?, 1, ?, ? )
+        Account( email, password, username, reset, active, is_admin, last_seen, created ) 
+        VALUES ( ?, ?, ?, ?, 1, ?, ?, ? )
         ";
         // Check if email is valid
         if (Validator::validateEmail($email) == false) {
@@ -70,7 +77,7 @@ class Account extends Database {
         // Create mysql prepared statement
         $insert_statement = $this -> connection -> prepare($insert_query);
         // Binding parameters to the query
-        $insert_statement -> bind_param( "ssssss", $email, $hashed_pass, $username, $reset, $create_time, $create_time );
+        $insert_statement -> bind_param( "ssssiss", $email, $hashed_pass, $username, $reset, $is_admin, $create_time, $create_time );
         // Execute statement
         if ($insert_statement -> execute()) {
             $this -> response['success'] = 1;
@@ -85,21 +92,72 @@ class Account extends Database {
     }
 
     public function getUserByEmail($email) {
-        $query = "SELECT * FROM Account WHERE email = ?";
+        $query = "SELECT id, email, username, password, is_admin FROM Account WHERE email = ?";
         $statement = $this->connection->prepare($query);
+        if (!$statement) {
+            error_log("Failed to prepare statement: " . $this->connection->error);
+            return false;
+        }
+        
         $statement->bind_param("s", $email);
-        $statement->execute();
+        if (!$statement->execute()) {
+            error_log("Failed to execute statement: " . $statement->error);
+            return false;
+        }
+        
         $result = $statement->get_result();
-        return $result->fetch_assoc();
+        $user = $result->fetch_assoc();
+        
+        if ($user) {
+            $this->id = $user['id'];
+            $this->email = $user['email'];
+            $this->username = $user['username'];
+            $this->password = $user['password'];
+            $this->is_admin = (bool)$user['is_admin'];
+            error_log("User found: ID=" . $this->id . ", Email=" . $this->email . ", Admin=" . $this->is_admin);
+            return true;
+        }
+        
+        error_log("No user found for email: " . $email);
+        return false;
+    }
+
+    public function getId() {
+        return $this->id;
     }
 
     public function getUsername() {
-        $query = "SELECT username FROM Account WHERE email = ?";
+        return $this->username;
+    }
+
+    public function getEmail() {
+        return $this->email;
+    }
+
+    public function getPassword() {
+        return $this->password;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->is_admin === 1;
+    }
+
+    public function setAdmin($email, $is_admin) {
+        $query = "UPDATE Account SET is_admin = ? WHERE email = ?";
         $statement = $this->connection->prepare($query);
-        $statement->bind_param("s", $email);
-        $statement->execute();
-        $result = $statement->get_result();
-        return $result->fetch_assoc();
+        if (!$statement) {
+            error_log("Failed to prepare statement: " . $this->connection->error);
+            return false;
+        }
+        
+        $statement->bind_param("is", $is_admin, $email);
+        if (!$statement->execute()) {
+            error_log("Failed to execute statement: " . $statement->error);
+            return false;
+        }
+        
+        return true;
     }
 
     public function login($email, $password)
@@ -236,6 +294,116 @@ class Account extends Database {
         $stmt = $this->connection->prepare($sql);
         $stmt->bind_param("ss", $new_username, $email);
         return $stmt->execute();
+    }
+
+    public function getAllUsers() {
+        $query = "SELECT id, email, username, active, is_admin, created, last_seen FROM Account ORDER BY created DESC";
+        $statement = $this->connection->prepare($query);
+        if (!$statement) {
+            error_log("Failed to prepare statement: " . $this->connection->error);
+            return [];
+        }
+        
+        if (!$statement->execute()) {
+            error_log("Failed to execute statement: " . $statement->error);
+            return [];
+        }
+        
+        $result = $statement->get_result();
+        $users = [];
+        while ($row = $result->fetch_assoc()) {
+            $users[] = $row;
+        }
+        
+        return $users;
+    }
+
+    public function delete($user_id) {
+        $query = "DELETE FROM Account WHERE id = ?";
+        $statement = $this->connection->prepare($query);
+        if (!$statement) {
+            error_log("Failed to prepare statement: " . $this->connection->error);
+            return false;
+        }
+        
+        $statement->bind_param("i", $user_id);
+        if (!$statement->execute()) {
+            error_log("Failed to execute statement: " . $statement->error);
+            return false;
+        }
+        
+        return true;
+    }
+
+    public function toggleActive($user_id) {
+        $query = "UPDATE Account SET active = NOT active WHERE id = ?";
+        $statement = $this->connection->prepare($query);
+        if (!$statement) {
+            error_log("Failed to prepare statement: " . $this->connection->error);
+            return false;
+        }
+        
+        $statement->bind_param("i", $user_id);
+        if (!$statement->execute()) {
+            error_log("Failed to execute statement: " . $statement->error);
+            return false;
+        }
+        
+        return true;
+    }
+
+    public function toggleAdmin($user_id) {
+        $query = "UPDATE Account SET is_admin = NOT is_admin WHERE id = ?";
+        $statement = $this->connection->prepare($query);
+        if (!$statement) {
+            error_log("Failed to prepare statement: " . $this->connection->error);
+            return false;
+        }
+        
+        $statement->bind_param("i", $user_id);
+        if (!$statement->execute()) {
+            error_log("Failed to execute statement: " . $statement->error);
+            return false;
+        }
+        
+        return true;
+    }
+
+    public function getUserById($user_id) {
+        $query = "SELECT id, email, username, password, is_admin, active FROM Account WHERE id = ?";
+        $statement = $this->connection->prepare($query);
+        if (!$statement) {
+            error_log("Failed to prepare statement: " . $this->connection->error);
+            return false;
+        }
+        
+        $statement->bind_param("i", $user_id);
+        if (!$statement->execute()) {
+            error_log("Failed to execute statement: " . $statement->error);
+            return false;
+        }
+        
+        $result = $statement->get_result();
+        $user = $result->fetch_assoc();
+        
+        if ($user) {
+            $this->id = $user['id'];
+            $this->email = $user['email'];
+            $this->username = $user['username'];
+            $this->password = $user['password'];
+            $this->is_admin = (bool)$user['is_admin'];
+            $this->active = (bool)$user['active'];
+            error_log("User found: ID=" . $this->id . ", Email=" . $this->email . ", Admin=" . $this->is_admin . ", Active=" . $this->active);
+            return true;
+        }
+        
+        error_log("No user found for ID: " . $user_id);
+        return false;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->active === 1;
     }
 }
 ?>

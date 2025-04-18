@@ -20,9 +20,8 @@ $success = null;
 $user_id = null;
 if (isLoggedIn()) {
     $account = new Account();
-    $user = $account->getUserByEmail($_SESSION['email']);
-    if ($user) {
-        $user_id = $user['id'];
+    if ($account->getUserByEmail($_SESSION['email'])) {
+        $user_id = $account->getId();
     }
 }
 
@@ -36,13 +35,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['email'])) {
             if ($review_id) {
                 try {
                     $account = new Account();
-                    $user = $account->getUserByEmail($_SESSION['email']);
-                    
-                    if (!$user) {
+                    if (!$account->getUserByEmail($_SESSION['email'])) {
                         throw new Exception("User not found");
                     }
 
-                    $boardGame->deleteReview($review_id, $user['id']);
+                    $boardGame->deleteReview($review_id, $account->getId());
 
                     // Redirect to the same page to show the updated reviews
                     header("Location: reviews.php");
@@ -66,13 +63,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['email'])) {
                     }
 
                     $account = new Account();
-                    $user = $account->getUserByEmail($_SESSION['email']);
-                    
-                    if (!$user) {
+                    if (!$account->getUserByEmail($_SESSION['email'])) {
                         throw new Exception("User not found");
                     }
 
-                    $boardGame->updateReview($review_id, $user['id'], $rating, $review_text);
+                    $boardGame->updateReview($review_id, $account->getId(), $rating, $review_text);
 
                     // Redirect to the same page to show the updated review
                     header("Location: reviews.php");
@@ -99,19 +94,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['email'])) {
                 }
 
                 $account = new Account();
-                $user = $account->getUserByEmail($_SESSION['email']);
-                
-                if (!$user) {
+                if (!$account->getUserByEmail($_SESSION['email'])) {
                     throw new Exception("User not found");
                 }
 
-                $boardGame->addReview($user['id'], $game_id, $rating, $review_text);
+                $boardGame->addReview($game_id, $account->getId(), $rating, $review_text);
 
                 // Redirect to the same page to show the new review
                 header("Location: reviews.php");
                 exit;
             } catch (Exception $e) {
-                $error = "Error submitting review: " . $e->getMessage();
+                $error = "Error adding review: " . $e->getMessage();
             }
         } else {
             $error = "Please fill in all fields";
@@ -130,6 +123,7 @@ try {
     // Render template
     echo $twig->render('reviews.twig', [
         'loggedin' => isLoggedIn(),
+        'is_admin' => isAdmin(),
         'reviews' => $reviews,
         'games' => $games,
         'error' => $error,

@@ -27,6 +27,7 @@ $max_playtime = $_GET['max_playtime'] ?? 240;
 // Initialize variables
 $data = [
     'loggedin' => isLoggedIn(),
+    'is_admin' => isAdmin(),
     'query' => $query,
     'franchise' => $franchise,
     'brand' => $brand,
@@ -153,6 +154,8 @@ try {
 
 // Render the template
 echo $twig->render('search.twig', [
+    'loggedin' => isLoggedIn(),
+    'is_admin' => isAdmin(),
     'query' => $query,
     'results' => $results,
     'franchise' => $franchise,

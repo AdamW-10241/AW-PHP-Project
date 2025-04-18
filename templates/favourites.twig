@@ -5,6 +5,9 @@
     <div class="text-center mb-3">
         <h1 class="display-4 fw-bold text-primary mb-3">My Favourites</h1>
         <p class="lead text-muted">Your curated collection of favourite board games</p>
+        <p class="text-muted small">
+            <i class="fas fa-arrows-alt me-1"></i> Drag and drop to reorder your favourites
+        </p>
         <div class="d-flex justify-content-center">
             <div class="border-bottom border-primary" style="width: 100px;"></div>
         </div>
@@ -15,7 +18,7 @@
     {% if favourites %}
         <div id="favourites-list" class="row g-2">
             {% for favourite in favourites %}
-                <div class="col-md-3 mb-1 favourite-item" data-id="{{ favourite.id }}" draggable="true">
+                <div class="col-md-3 mb-1 favourite-item" data-id="{{ favourite.id }}" data-position="{{ favourite.position }}">
                     <div class="card h-100 d-flex flex-column">
                         <div class="card-body d-flex flex-column">
                             <div class="text-center mb-3">
@@ -40,7 +43,7 @@
                             </div>
                             <div class="mt-3 d-flex gap-2">
                                 <a href="detail.php?id={{ favourite.id }}" class="btn btn-primary flex-grow-1">View details</a>
-                                <button class="btn btn-outline-danger toggle-favourite" data-game-id="{{ favourite.id }}">
+                                <button type="button" class="btn btn-danger toggle-favorite" data-game-id="{{ favourite.id }}">
                                     <i class="fas fa-heart"></i>
                                 </button>
                             </div>
@@ -66,73 +69,84 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Sortable for drag and drop
     const favouritesList = document.getElementById('favourites-list');
-    
     if (favouritesList) {
         new Sortable(favouritesList, {
             animation: 150,
-            ghostClass: 'opacity-50',
+            ghostClass: 'sortable-ghost',
             onEnd: function(evt) {
-                const items = Array.from(favouritesList.children).map((item, index) => ({
+                const items = Array.from(favouritesList.children);
+                const newOrder = items.map((item, index) => ({
                     id: item.dataset.id,
                     position: index
                 }));
 
-                fetch('/reorder_favourites.php', {
+                // Send new order to server
+                fetch('/update_favorites_order.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
-                    body: JSON.stringify({ favourites: items })
+                    body: JSON.stringify(newOrder)
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (!data.success) {
-                        console.error('Error reordering favourites:', data.error);
+                        console.error('Failed to update order:', data.error);
+                        // Revert the order if update failed
+                        evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex]);
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
+                    console.error('Error updating order:', error);
+                    // Revert the order if update failed
+                    evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex]);
                 });
             }
         });
     }
 
     // Handle favorite button clicks
-    document.querySelectorAll('.toggle-favourite').forEach(button => {
+    document.querySelectorAll('.toggle-favorite').forEach(button => {
         button.addEventListener('click', function() {
             const gameId = this.dataset.gameId;
             const gameCard = this.closest('.favourite-item');
+            
+            console.log('Toggling favorite for game ID:', gameId);
 
             fetch('/toggle_favorite.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: 'game_id=' + gameId
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                return response.json();
+            })
             .then(data => {
+                console.log('Response data:', data);
                 if (data.success) {
-                    if (data.action === 'added') {
-                        this.classList.remove('btn-outline-danger');
-                        this.classList.add('btn-danger');
-                    } else {
-                        // Remove the game card from the DOM
-                        gameCard.remove();
-                        
-                        // If no games left, show the empty message
-                        if (document.querySelectorAll('.favourite-item').length === 0) {
-                            window.location.reload(); // Reload to show the empty state
-                        }
+                    // Remove the game card from the DOM
+                    gameCard.remove();
+                    
+                    // If no games left, show the empty message
+                    if (document.querySelectorAll('.favourite-item').length === 0) {
+                        window.location.reload();
                     }
                 } else {
+                    console.error('Error from server:', data.error);
                     alert('Failed to update favourite status: ' + data.error);
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to update favourite status');
+                console.error('Fetch error:', error);
+                alert('Failed to update favourite status. Check console for details.');
             });
         });
     });
@@ -142,14 +156,11 @@ document.addEventListener('DOMContentLoaded', function() {
 <style>
 .favourite-item {
     transition: transform 0.2s ease;
+    cursor: move;
 }
 
 .favourite-item:hover {
     transform: translateY(-2px);
-}
-
-.favourite-item.dragging {
-    opacity: 0.5;
 }
 
 .card {
@@ -157,6 +168,17 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.sortable-ghost {
+    opacity: 0.5;
+    background: #f8f9fa;
+}
+
+.sortable-drag {
+    opacity: 0.9;
+    background: #fff;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 </style>

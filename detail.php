@@ -51,9 +51,8 @@ if ( $_GET['id'] ) {
     $has_reviewed = false;
     if (isset($_SESSION['email'])) {
         try {
-            $user = $account->getUserByEmail($_SESSION['email']);
-            if ($user) {
-                $has_reviewed = $boardgame->hasUserReviewed($user['id'], $_GET['id']);
+            if ($account->getUserByEmail($_SESSION['email'])) {
+                $has_reviewed = $boardgame->hasUserReviewed($account->getId(), $_GET['id']);
             }
         } catch (Exception $e) {
             error_log("Error checking user review: " . $e->getMessage());
@@ -64,9 +63,8 @@ if ( $_GET['id'] ) {
     $is_favorited = false;
     if (isLoggedIn() && isset($_SESSION['email'])) {
         try {
-            $user = $account->getUserByEmail($_SESSION['email']);
-            if ($user) {
-                $is_favorited = $boardgame->isFavorited($user['id'], $_GET['id']);
+            if ($account->getUserByEmail($_SESSION['email'])) {
+                $is_favorited = $boardgame->isFavorited($account->getId(), $_GET['id']);
             }
         } catch (Exception $e) {
             error_log("Error checking favorite status: " . $e->getMessage());
@@ -87,13 +85,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['email'])) {
 
                 if ($review_id) {
                     try {
-                        $user = $account->getUserByEmail($_SESSION['email']);
-                        
-                        if (!$user) {
+                        if (!$account->getUserByEmail($_SESSION['email'])) {
                             throw new Exception("User not found");
                         }
 
-                        $boardgame->deleteReview($review_id, $user['id']);
+                        $boardgame->deleteReview($review_id, $account->getId());
 
                         // Redirect to the same page to show the updated reviews
                         header("Location: detail.php?id=" . $_GET['id']);
@@ -110,19 +106,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['email'])) {
 
                 if ($review_id && $rating && $review_text) {
                     try {
-                        // Validate rating
-                        $rating = (int)$rating;
-                        if ($rating < 1 || $rating > 5) {
-                            throw new Exception("Rating must be between 1 and 5");
-                        }
-
-                        $user = $account->getUserByEmail($_SESSION['email']);
-                        
-                        if (!$user) {
+                        if (!$account->getUserByEmail($_SESSION['email'])) {
                             throw new Exception("User not found");
                         }
 
-                        $boardgame->updateReview($review_id, $user['id'], $rating, $review_text);
+                        $boardgame->updateReview($review_id, $account->getId(), $rating, $review_text);
 
                         // Redirect to the same page to show the updated review
                         header("Location: detail.php?id=" . $_GET['id']);
@@ -130,40 +118,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['email'])) {
                     } catch (Exception $e) {
                         $error = "Error updating review: " . $e->getMessage();
                     }
-                } else {
-                    $error = "Please fill in all fields";
-                }
-            }
-        } else {
-            // Handle new review submission
-            $game_id = $_POST['game_id'] ?? null;
-            $rating = $_POST['rating'] ?? null;
-            $review_text = $_POST['review_text'] ?? null;
-
-            if ($game_id && $rating && $review_text) {
-                try {
-                    // Validate rating
-                    $rating = (int)$rating;
-                    if ($rating < 1 || $rating > 5) {
-                        throw new Exception("Rating must be between 1 and 5");
-                    }
-
-                    $user = $account->getUserByEmail($_SESSION['email']);
-                    
-                    if (!$user) {
-                        throw new Exception("User not found");
-                    }
-
-                    $boardgame->addReview($user['id'], $game_id, $rating, $review_text);
-
-                    // Redirect to the same page to show the new review
-                    header("Location: detail.php?id=" . $game_id);
-                    exit;
-                } catch (Exception $e) {
-                    $error = "Error submitting review: " . $e->getMessage();
                 }
             } else {
-                $error = "Please fill in all fields";
+                // Handle new review submission
+                $game_id = $_POST['game_id'] ?? null;
+                $rating = $_POST['rating'] ?? null;
+                $review_text = $_POST['review_text'] ?? null;
+
+                if ($game_id && $rating && $review_text) {
+                    try {
+                        if (!$account->getUserByEmail($_SESSION['email'])) {
+                            throw new Exception("User not found");
+                        }
+
+                        $boardgame->addReview($account->getId(), $game_id, $rating, $review_text);
+
+                        // Redirect to the same page to show the new review
+                        header("Location: detail.php?id=" . $game_id);
+                        exit;
+                    } catch (Exception $e) {
+                        $error = "Error submitting review: " . $e->getMessage();
+                    }
+                }
             }
         }
     }
@@ -188,6 +164,7 @@ $twig->addGlobal('security', new Security());
 echo $twig->render('detail.twig', [
     'detail' => $detail,
     'loggedin' => $isauthenticated,
+    'is_admin' => isAdmin(),
     'reviews' => $reviews,
     'error' => $error,
     'session_email' => $_SESSION['email'] ?? null,

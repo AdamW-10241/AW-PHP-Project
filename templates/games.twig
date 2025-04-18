@@ -38,10 +38,17 @@
                                 <span class="badge bg-info">{{ item.age_range }}</span>
                                 <span class="badge bg-info">{{ item.playtime_range }} Min</span>
                                 {% if loggedin %}
-                                    <button class="btn btn-sm toggle-favourite {{ item.is_favorited ? 'btn-danger' : 'btn-outline-danger' }}" 
-                                            data-game-id="{{ item.id }}">
+                                    <form action="/toggle_favorite.php" method="POST" class="d-inline">
+                                        <input type="hidden" name="game_id" value="{{ item.id|e }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <button type="submit" class="btn btn-sm {{ item.is_favorited ? 'btn-danger' : 'btn-outline-danger' }}">
+                                            <i class="fas fa-heart"></i>
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <a href="/login.php" class="btn btn-sm btn-outline-danger">
                                         <i class="fas fa-heart"></i>
-                                    </button>
+                                    </a>
                                 {% endif %}
                             </div>
                             <div class="mt-3">

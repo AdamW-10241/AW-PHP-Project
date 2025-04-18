@@ -2,6 +2,9 @@
 // Import database schema and sample data
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/src/Account.php';
+
+use Adam\AwPhpProject\Account;
 
 // Load environment variables
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
@@ -81,6 +84,22 @@ try {
     }
 
     echo "\nDatabase import completed successfully!\n";
+
+    // Create admin account
+    $account = new Account();
+    $adminEmail = 'admin@example.com';
+    $adminPassword = 'admin123';
+    $adminUsername = 'admin';
+
+    if ($account->create($adminEmail, $adminPassword, $adminUsername, true)) {
+        echo "\nAdmin account created successfully!\n";
+        echo "Email: $adminEmail\n";
+        echo "Password: $adminPassword\n";
+        echo "Username: $adminUsername\n";
+    } else {
+        echo "\nFailed to create admin account. It might already exist.\n";
+    }
+
 } catch (PDOException $e) {
     echo "Error: " . $e->getMessage() . "\n";
 } 

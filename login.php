@@ -1,8 +1,10 @@
 <?php 
 // Start session
 session_start();
+require_once 'config.php';
 require_once 'vendor/autoload.php';
-require_once 'session_helper.php';
+require_once 'src/Account.php';
+require_once 'src/Security.php';
 
 use Twig\Loader\FilesystemLoader;
 use Twig\Environment;
@@ -13,54 +15,76 @@ use Adam\AwPhpProject\Security;
 $loader = new FilesystemLoader('templates');
 $twig = new Environment($loader);
 
+// Add Security class to Twig globals
+$twig->addGlobal('security', new Security());
+
 // Redirect if already logged in
-if (isLoggedIn()) {
+if (isset($_SESSION['email'])) {
     header('Location: /index.php');
     exit();
 }
 
 // Initialize variables
 $data = [
-    'loggedin' => isLoggedIn(),
-    'error' => null
+    'errors' => [],
+    'success' => false,
+    'email' => ''
 ];
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate CSRF token
     if (!isset($_POST['csrf_token']) || !Security::validateToken($_POST['csrf_token'])) {
-        $errors[] = "Invalid CSRF token";
-        echo $twig->render('login.twig', ['errors' => $errors]);
+        $data['errors'][] = "Invalid CSRF token";
+        echo $twig->render('login.twig', $data);
         exit;
     }
     
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
+    $data['email'] = $email; // Preserve email in form
 
     try {
         $account = new Account();
-        $result = $account->login($email, $password);
         
-        if ($result['success'] === true) {
-            // Set session and redirect only if login was successful
-            $_SESSION['email'] = $email;
-
-            $user = new Account();
-            $user -> getUserByEmail($_SESSION['email']);
-
-            $_SESSION['username'] = $user -> getUsername();;
-            header('Location: /index.php');
-            exit();
-        } else {
-            // Handle login errors
-            if (isset($result['errors'])) {
-                $data['errors'] = array_values($result['errors']);
+        // Check if email is empty
+        if (empty($email)) {
+            $data['errors'][] = "Email is required";
+        }
+        
+        // Check if password is empty
+        if (empty($password)) {
+            $data['errors'][] = "Password is required";
+        }
+        
+        // Only proceed if we have both email and password
+        if (empty($data['errors'])) {
+            if ($account->getUserByEmail($email)) {
+                // Check if user is active
+                if (!$account->isActive()) {
+                    $data['errors'][] = 'Your account has been deactivated. Please contact an administrator.';
+                } else if (!password_verify($password, $account->getPassword())) {
+                    $data['errors'][] = "Invalid email or password";
+                } else {
+                    // Login successful
+                    $_SESSION['user_id'] = $account->getId();
+                    $_SESSION['username'] = $account->getUsername();
+                    $_SESSION['email'] = $account->getEmail();
+                    $_SESSION['logged_in'] = true;
+                    
+                    // Debug log
+                    error_log("Login successful. Session data: " . print_r($_SESSION, true));
+                    
+                    header("Location: index.php");
+                    exit();
+                }
             } else {
-                $data['errors'] = ['Invalid email or password.'];
+                $data['errors'][] = "Invalid email or password";
             }
         }
     } catch (Exception $e) {
-        $data['errors'] = [$e->getMessage()];
+        $data['errors'][] = "An error occurred. Please try again later.";
+        error_log("Login error: " . $e->getMessage());
     }
 }
 

@@ -2,20 +2,49 @@
 namespace Adam\AwPhpProject;
 
 class Security {
-    private static $tokenName = 'csrf_token';
+    private static $tokenName = 'csrf-token';
+    
+    public static function getTokenName() {
+        return self::$tokenName;
+    }
     
     public static function generateToken() {
-        if (empty($_SESSION[self::$tokenName])) {
-            $_SESSION[self::$tokenName] = bin2hex(random_bytes(32));
-        }
-        return $_SESSION[self::$tokenName];
+        // Generate a simple token based on time and random bytes
+        $token = base64_encode(time() . bin2hex(random_bytes(16)));
+        error_log("Generated token: " . $token);
+        return $token;
     }
     
     public static function validateToken($token) {
-        if (empty($_SESSION[self::$tokenName]) || empty($token)) {
+        error_log("Validating token: " . $token);
+        
+        if (empty($token)) {
+            error_log("Token is empty");
             return false;
         }
-        return hash_equals($_SESSION[self::$tokenName], $token);
+        
+        // Decode the token
+        $decoded = base64_decode($token);
+        if ($decoded === false) {
+            error_log("Token is not valid base64");
+            return false;
+        }
+        
+        // Extract timestamp
+        $timestamp = substr($decoded, 0, 10);
+        if (!is_numeric($timestamp)) {
+            error_log("Invalid timestamp in token");
+            return false;
+        }
+        
+        // Check if token is not too old (5 minutes)
+        if (time() - $timestamp > 300) {
+            error_log("Token is too old");
+            return false;
+        }
+        
+        error_log("Token is valid");
+        return true;
     }
     
     public static function sanitizeInput($input) {

@@ -63,5 +63,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Render template
-echo $twig->render('signup.twig', $data);
+echo $twig->render('signup.twig', [
+    'errors' => $errors,
+    'loggedin' => isLoggedIn(),
+    'is_admin' => isAdmin()
+]);
 ?>

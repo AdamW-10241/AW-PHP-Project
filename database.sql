@@ -1,16 +1,16 @@
-USE mariadb;
-
 -- Drop existing tables if they exist
-DROP TABLE IF EXISTS Newsletter_Subscriber;
+-- Drop child tables first
+DROP TABLE IF EXISTS ReviewRating;
 DROP TABLE IF EXISTS Comment;
 DROP TABLE IF EXISTS Blog_Post;
 DROP TABLE IF EXISTS Favourite;
 DROP TABLE IF EXISTS Review;
 DROP TABLE IF EXISTS News;
--- Drop junction tables first
 DROP TABLE IF EXISTS BoardGame_Artist;
 DROP TABLE IF EXISTS BoardGame_Designer;
 DROP TABLE IF EXISTS BoardGame_Publisher;
+DROP TABLE IF EXISTS Newsletter_Subscriber;
+
 -- Drop main tables after their dependencies
 DROP TABLE IF EXISTS BoardGame;
 DROP TABLE IF EXISTS Artist;
@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS Account (
     username VARCHAR(255) NOT NULL,
     reset VARCHAR(255),
     active TINYINT(1) DEFAULT 1,
+    is_admin TINYINT(1) DEFAULT 0,
     last_seen DATETIME,
     created DATETIME,
     INDEX idx_email (email)

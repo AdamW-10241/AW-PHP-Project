@@ -189,52 +189,92 @@
 
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle edit button click
-    document.querySelectorAll('.edit-review').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            const cardBody = this.closest('.card-body');
-            const reviewContent = cardBody.querySelector('.review-content');
-            const editForm = cardBody.querySelector('.edit-form');
-            
-            if (reviewContent && editForm) {
-                reviewContent.classList.add('d-none');
-                editForm.classList.remove('d-none');
-            }
-        });
-    });
-
-    // Handle cancel button click
-    document.querySelectorAll('.cancel-edit').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            const cardBody = this.closest('.card-body');
-            const reviewContent = cardBody.querySelector('.review-content');
-            const editForm = cardBody.querySelector('.edit-form');
-            
-            if (reviewContent && editForm) {
-                reviewContent.classList.remove('d-none');
-                editForm.classList.add('d-none');
-            }
-        });
-    });
-
-    // Handle delete button click
-    document.querySelectorAll('.delete-review').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
+    // Handle review rating buttons
+    document.querySelectorAll('.rate-review').forEach(button => {
+        button.addEventListener('click', async function() {
             const reviewId = this.dataset.reviewId;
-            const deleteReviewId = document.getElementById('deleteReviewId');
-            const modal = document.getElementById('deleteReviewModal');
-            
-            if (deleteReviewId && modal) {
-                deleteReviewId.value = reviewId;
-                const bsModal = new bootstrap.Modal(modal);
-                bsModal.show();
+            const rating = parseInt(this.dataset.rating);
+            const csrfToken = document.getElementById('csrf_token').value;
+
+            try {
+                const response = await fetch('/rate_review.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        review_id: reviewId,
+                        rating: rating,
+                        csrf_token: csrfToken
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update the button states and counts
+                    const reviewCard = this.closest('.card');
+                    const likeButton = reviewCard.querySelector('[data-rating="1"]');
+                    const dislikeButton = reviewCard.querySelector('[data-rating="-1"]');
+                    
+                    // Update button states
+                    if (rating === 1) {
+                        likeButton.classList.toggle('btn-success');
+                        likeButton.classList.toggle('btn-outline-success');
+                        if (data.action === 'removed') {
+                            dislikeButton.classList.remove('btn-danger');
+                            dislikeButton.classList.add('btn-outline-danger');
+                        }
+                    } else {
+                        dislikeButton.classList.toggle('btn-danger');
+                        dislikeButton.classList.toggle('btn-outline-danger');
+                        if (data.action === 'removed') {
+                            likeButton.classList.remove('btn-success');
+                            likeButton.classList.add('btn-outline-success');
+                        }
+                    }
+                    
+                    // Update counts
+                    likeButton.querySelector('span').textContent = data.like_count;
+                    dislikeButton.querySelector('span').textContent = data.dislike_count;
+                } else {
+                    alert(data.error || 'Failed to rate review');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while rating the review');
             }
         });
     });
-});
+
+    // Handle review edit and delete buttons
+    document.querySelectorAll('.edit-review').forEach(button => {
+        button.addEventListener('click', function() {
+            const reviewContent = this.closest('.review-content');
+            const editForm = reviewContent.nextElementSibling;
+            
+            reviewContent.classList.add('d-none');
+            editForm.classList.remove('d-none');
+        });
+    });
+
+    document.querySelectorAll('.cancel-edit').forEach(button => {
+        button.addEventListener('click', function() {
+            const editForm = this.closest('.edit-form');
+            const reviewContent = editForm.previousElementSibling;
+            
+            editForm.classList.add('d-none');
+            reviewContent.classList.remove('d-none');
+        });
+    });
+
+    // Handle delete review button
+    document.querySelectorAll('.delete-review').forEach(button => {
+        button.addEventListener('click', function() {
+            const reviewId = this.dataset.reviewId;
+            document.getElementById('deleteReviewId').value = reviewId;
+            new bootstrap.Modal(document.getElementById('deleteReviewModal')).show();
+        });
+    });
 </script>
 {% endblock %}

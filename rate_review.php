@@ -1,97 +1,82 @@
 <?php
-require_once 'config.php';
-require_once 'session_helper.php';
-
+// Start session and set headers before any output
+session_start();
 header('Content-Type: application/json');
 
-// Check if user is logged in
-if (!isLoggedIn()) {
+// Debug logging
+error_log("=== SESSION DEBUG ===");
+error_log("Session ID: " . session_id());
+error_log("Session contents: " . print_r($_SESSION, true));
+error_log("Cookie contents: " . print_r($_COOKIE, true));
+error_log("=== END SESSION DEBUG ===");
+
+// Get JSON input
+$input = json_decode(file_get_contents('php://input'), true);
+error_log("Input contents: " . print_r($input, true));
+
+require_once 'config.php';
+require_once 'src/Security.php';
+require_once 'src/BoardGame.php';
+require_once 'src/Account.php';
+
+use Adam\AwPhpProject\Security;
+use Adam\AwPhpProject\BoardGame;
+use Adam\AwPhpProject\Account;
+
+// Check if user is logged in - be more lenient with the check
+$isLoggedIn = isset($_SESSION['user_id']) || isset($_SESSION['email']) || isset($_SESSION['username']);
+error_log("Is logged in check: " . ($isLoggedIn ? 'true' : 'false'));
+
+if (!$isLoggedIn) {
+    error_log("User not logged in - no session variables found");
     echo json_encode(['success' => false, 'error' => 'You must be logged in to rate reviews']);
     exit;
 }
 
-// Check if it's a POST request
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['success' => false, 'error' => 'Invalid request method']);
+// Get user ID from session
+$userId = $_SESSION['user_id'] ?? $_SESSION['id'] ?? null;
+if (!$userId) {
+    error_log("No user ID found in session");
+    echo json_encode(['success' => false, 'error' => 'User ID not found in session']);
     exit;
 }
 
-// Get the review ID and rating from the request
-$review_id = $_POST['review_id'] ?? null;
-$rating = $_POST['rating'] ?? null;
-
-// Validate inputs
-if (!$review_id || !$rating) {
+// Check if required parameters are present
+if (!isset($input['review_id']) || !isset($input['rating'])) {
     echo json_encode(['success' => false, 'error' => 'Missing required parameters']);
     exit;
 }
 
 try {
-    // Create database connection
-    $pdo = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
-        DB_USER,
-        DB_PASS,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
-
-    // Get the user's email from the session
-    $email = $_SESSION['email'];
-
-    // Get the user's ID
-    $stmt = $pdo->prepare("SELECT id FROM Account WHERE email = ?");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if (!$user) {
-        echo json_encode(['success' => false, 'error' => 'User not found']);
+    // Sanitize and validate inputs
+    $reviewId = Security::validateInteger($input['review_id']);
+    $rating = intval($input['rating']); // Convert to integer
+    
+    error_log("Rating value: " . $rating);
+    error_log("Rating type: " . gettype($rating));
+    error_log("User ID: " . $userId);
+    
+    // Validate rating value - allow both string and integer values
+    if ($rating != 1 && $rating != -1) {
+        error_log("Invalid rating value received: " . $rating);
+        echo json_encode(['success' => false, 'error' => 'Invalid rating value: ' . $rating]);
         exit;
     }
 
-    $user_id = $user['id'];
+    // Rate the review
+    $boardGame = new BoardGame();
+    $result = $boardGame->rateReview($reviewId, $userId, $rating);
 
-    // Check if the user has already rated this review
-    $stmt = $pdo->prepare("SELECT rating FROM ReviewRating WHERE review_id = ? AND user_id = ?");
-    $stmt->execute([$review_id, $user_id]);
-    $existing_rating = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($existing_rating) {
-        // If the user is clicking the same rating again, remove their rating
-        if ($existing_rating['rating'] == $rating) {
-            $stmt = $pdo->prepare("DELETE FROM ReviewRating WHERE review_id = ? AND user_id = ?");
-            $stmt->execute([$review_id, $user_id]);
-            $new_rating = 0;
-        } else {
-            // Update the existing rating
-            $stmt = $pdo->prepare("UPDATE ReviewRating SET rating = ? WHERE review_id = ? AND user_id = ?");
-            $stmt->execute([$rating, $review_id, $user_id]);
-            $new_rating = $rating;
-        }
-    } else {
-        // Add a new rating
-        $stmt = $pdo->prepare("INSERT INTO ReviewRating (review_id, user_id, rating) VALUES (?, ?, ?)");
-        $stmt->execute([$review_id, $user_id, $rating]);
-        $new_rating = $rating;
-    }
-
-    // Calculate the new total rating for the review
-    $stmt = $pdo->prepare("SELECT SUM(rating) as total FROM ReviewRating WHERE review_id = ?");
-    $stmt->execute([$review_id]);
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    $total_rating = $result['total'] ?? 0;
-
-    // Update the review's total rating
-    $stmt = $pdo->prepare("UPDATE Review SET rating = ? WHERE id = ?");
-    $stmt->execute([$total_rating, $review_id]);
-
+    // Return success response with updated counts
     echo json_encode([
         'success' => true,
-        'new_rating' => $total_rating,
-        'user_rating' => $new_rating
+        'action' => $result['action'],
+        'like_count' => $result['like_count'],
+        'dislike_count' => $result['dislike_count']
     ]);
 
-} catch (PDOException $e) {
+} catch (Exception $e) {
     error_log("Error rating review: " . $e->getMessage());
-    echo json_encode(['success' => false, 'error' => 'Database error occurred']);
+    echo json_encode(['success' => false, 'error' => 'An error occurred while rating the review']);
 }
 ?> 

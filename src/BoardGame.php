@@ -207,12 +207,23 @@ class BoardGame extends Database {
         return $games;
     }
 
-    public function addReview($user_id, $game_id, $star_rating, $comment) {
+    public function addReview($game_id, $user_id, $star_rating, $comment) {
+        error_log("Adding review - Game ID: " . $game_id . ", User ID: " . $user_id . ", Rating: " . $star_rating);
+        
         // Check if user already reviewed this game
         $check_query = "SELECT id FROM Review WHERE user_id = ? AND game_id = ?";
         $check_stmt = $this->connection->prepare($check_query);
+        if (!$check_stmt) {
+            error_log("Failed to prepare check query: " . $this->connection->error);
+            throw new Exception("Database error");
+        }
+        
         $check_stmt->bind_param("ii", $user_id, $game_id);
-        $check_stmt->execute();
+        if (!$check_stmt->execute()) {
+            error_log("Failed to execute check query: " . $check_stmt->error);
+            throw new Exception("Database error");
+        }
+        
         $result = $check_stmt->get_result();
         
         if ($result->num_rows > 0) {
@@ -220,10 +231,18 @@ class BoardGame extends Database {
         }
 
         // Add the review
-        $insert_query = "INSERT INTO Review (user_id, game_id, rating, comment) VALUES (?, ?, ?, ?)";
+        $insert_query = "INSERT INTO Review (game_id, user_id, rating, comment) VALUES (?, ?, ?, ?)";
         $insert_stmt = $this->connection->prepare($insert_query);
-        $insert_stmt->bind_param("iiis", $user_id, $game_id, $star_rating, $comment);
-        $insert_stmt->execute();
+        if (!$insert_stmt) {
+            error_log("Failed to prepare insert query: " . $this->connection->error);
+            throw new Exception("Database error");
+        }
+        
+        $insert_stmt->bind_param("iiis", $game_id, $user_id, $star_rating, $comment);
+        if (!$insert_stmt->execute()) {
+            error_log("Failed to execute insert query: " . $insert_stmt->error);
+            throw new Exception("Database error");
+        }
     }
 
     public function updateReview($review_id, $user_id, $star_rating, $comment) {
@@ -328,36 +347,33 @@ class BoardGame extends Database {
             $userId = Security::sanitizeInput($userId);
             $gameId = Security::sanitizeInput($gameId);
 
-            $db = new PDO(
-                "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
-                DB_USER,
-                DB_PASS,
-                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-            );
-            
             // Check if already favorited
-            $check_query = "SELECT * FROM favorites WHERE user_id = ? AND boardgame_id = ?";
-            $check_stmt = $db->prepare($check_query);
-            $check_stmt->execute([$userId, $gameId]);
+            $check_query = "SELECT * FROM Favourite WHERE user_id = ? AND boardgame_id = ?";
+            $check_stmt = $this->connection->prepare($check_query);
+            $check_stmt->bind_param("ii", $userId, $gameId);
+            $check_stmt->execute();
+            $result = $check_stmt->get_result();
             
-            if ($check_stmt->rowCount() > 0) {
+            if ($result->num_rows > 0) {
                 // Remove from favorites
-                $delete_query = "DELETE FROM favorites WHERE user_id = ? AND boardgame_id = ?";
-                $delete_stmt = $db->prepare($delete_query);
-                $delete_stmt->execute([$userId, $gameId]);
+                $delete_query = "DELETE FROM Favourite WHERE user_id = ? AND boardgame_id = ?";
+                $delete_stmt = $this->connection->prepare($delete_query);
+                $delete_stmt->bind_param("ii", $userId, $gameId);
+                $delete_stmt->execute();
                 
-                if ($delete_stmt->rowCount() === 0) {
+                if ($delete_stmt->affected_rows === 0) {
                     throw new Exception("Failed to remove favorite");
                 }
                 
                 return ['action' => 'removed'];
             } else {
                 // Add to favorites
-                $insert_query = "INSERT INTO favorites (user_id, boardgame_id) VALUES (?, ?)";
-                $insert_stmt = $db->prepare($insert_query);
-                $insert_stmt->execute([$userId, $gameId]);
+                $insert_query = "INSERT INTO Favourite (user_id, boardgame_id) VALUES (?, ?)";
+                $insert_stmt = $this->connection->prepare($insert_query);
+                $insert_stmt->bind_param("ii", $userId, $gameId);
+                $insert_stmt->execute();
                 
-                if ($insert_stmt->rowCount() === 0) {
+                if ($insert_stmt->affected_rows === 0) {
                     throw new Exception("Failed to add favorite");
                 }
                 
@@ -380,18 +396,13 @@ class BoardGame extends Database {
             $userId = Security::sanitizeInput($userId);
             $gameId = Security::sanitizeInput($gameId);
 
-            $db = new PDO(
-                "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
-                DB_USER,
-                DB_PASS,
-                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-            );
+            $query = "SELECT * FROM Favourite WHERE user_id = ? AND boardgame_id = ?";
+            $stmt = $this->connection->prepare($query);
+            $stmt->bind_param("ii", $userId, $gameId);
+            $stmt->execute();
+            $result = $stmt->get_result();
             
-            $query = "SELECT * FROM favorites WHERE user_id = ? AND boardgame_id = ?";
-            $stmt = $db->prepare($query);
-            $stmt->execute([$userId, $gameId]);
-            
-            return $stmt->rowCount() > 0;
+            return $result->num_rows > 0;
         } catch (Exception $e) {
             error_log("Error in isFavorited: " . $e->getMessage());
             return false;
@@ -529,6 +540,69 @@ class BoardGame extends Database {
             error_log("EXCEPTION in getSimilarGames: " . $e->getMessage());
             error_log("Stack trace: " . $e->getTraceAsString());
             return [];
+        }
+    }
+
+    public function rateReview($reviewId, $userId, $rating) {
+        try {
+            // Validate inputs
+            if (!Security::validateInteger($reviewId) || !Security::validateInteger($userId) || !Security::validateInteger($rating)) {
+                throw new Exception("Invalid input parameters");
+            }
+
+            // Check if user has already rated this review
+            $stmt = $this->connection->prepare("
+                SELECT rating 
+                FROM ReviewRating 
+                WHERE review_id = ? AND user_id = ?
+            ");
+            $stmt->execute([$reviewId, $userId]);
+            $existingRating = $stmt->fetchColumn();
+
+            if ($existingRating === false) {
+                // User hasn't rated this review yet - insert new rating
+                $stmt = $this->connection->prepare("
+                    INSERT INTO ReviewRating (review_id, user_id, rating)
+                    VALUES (?, ?, ?)
+                ");
+                $stmt->execute([$reviewId, $userId, $rating]);
+            } else if ($existingRating == $rating) {
+                // User is trying to rate the same way again - remove the rating
+                $stmt = $this->connection->prepare("
+                    DELETE FROM ReviewRating 
+                    WHERE review_id = ? AND user_id = ?
+                ");
+                $stmt->execute([$reviewId, $userId]);
+            } else {
+                // User is changing their rating - update it
+                $stmt = $this->connection->prepare("
+                    UPDATE ReviewRating 
+                    SET rating = ? 
+                    WHERE review_id = ? AND user_id = ?
+                ");
+                $stmt->execute([$rating, $reviewId, $userId]);
+            }
+
+            // Get updated counts
+            $stmt = $this->connection->prepare("
+                SELECT 
+                    SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as like_count,
+                    SUM(CASE WHEN rating = -1 THEN 1 ELSE 0 END) as dislike_count
+                FROM ReviewRating 
+                WHERE review_id = ?
+            ");
+            $stmt->execute([$reviewId]);
+            $counts = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return [
+                'action' => $existingRating === false ? 'added' : ($existingRating == $rating ? 'removed' : 'changed'),
+                'like_count' => (int)$counts['like_count'],
+                'dislike_count' => (int)$counts['dislike_count']
+            ];
+
+        } catch (Exception $e) {
+            error_log("Error in rateReview: " . $e->getMessage());
+            throw $e;
         }
     }
 }

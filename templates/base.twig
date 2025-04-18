@@ -15,8 +15,14 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}" id="csrf_token">
+    
     {# Include navigation #}
-    {% include 'navigation.twig' with {'current_page': current_page|default('home')} %}
+    {% include 'navigation.twig' with {
+        'current_page': current_page|default('home'),
+        'is_admin': is_admin|default(false),
+        'loggedin': loggedin|default(false)
+    } %}
 
     {# Main content #}
     <main class="container py-4">

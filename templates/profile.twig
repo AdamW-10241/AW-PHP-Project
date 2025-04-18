@@ -33,7 +33,7 @@
                             <input type="hidden" name="action" value="update_username">
                             <div class="mb-3">
                                 <label for="current_username" class="form-label">Current Username</label>
-                                <input type="username" class="form-control" id="current_username" value="{{ user.username }}" disabled>
+                                <input type="username" class="form-control" id="current_username" value="{{ account.getUsername() }}" disabled>
                             </div>
                             <div class="mb-3">
                                 <label for="new_username" class="form-label">New Username</label>
@@ -62,7 +62,7 @@
                             <input type="hidden" name="action" value="update_email">
                             <div class="mb-3">
                                 <label for="current_email" class="form-label">Current Email</label>
-                                <input type="email" class="form-control" id="current_email" value="{{ user.email }}" disabled>
+                                <input type="email" class="form-control" id="current_email" value="{{ account.getEmail() }}" disabled>
                             </div>
                             <div class="mb-3">
                                 <label for="new_email" class="form-label">New Email</label>

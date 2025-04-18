@@ -2,9 +2,20 @@
 require_once 'config.php';
 require_once 'session_helper.php';
 require_once 'vendor/autoload.php';
+require_once 'src/Security.php';
 
 use Twig\Loader\FilesystemLoader;
 use Twig\Environment;
+use Adam\AwPhpProject\Security;
+
+// Ensure session is started with proper configuration
+if (session_status() === PHP_SESSION_NONE) {
+    session_start([
+        'cookie_httponly' => true,
+        'cookie_secure' => true,
+        'cookie_samesite' => 'Lax'
+    ]);
+}
 
 // Initialize Twig
 $loader = new FilesystemLoader('templates');
@@ -43,6 +54,11 @@ try {
     $stmt->execute([$user_id]);
     $favourites = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Generate CSRF token
+    $csrf_token = Security::generateToken();
+    error_log("Generated CSRF token in favourites.php: " . $csrf_token);
+    error_log("Session ID in favourites.php: " . session_id());
+
     // Debug output
     error_log("User ID: " . $user_id);
     error_log("Number of favourites: " . count($favourites));
@@ -57,7 +73,8 @@ try {
 
     echo $twig->render('favourites.twig', [
         'favourites' => $favourites,
-        'loggedin' => isLoggedIn()
+        'loggedin' => isLoggedIn(),
+        'csrf_token' => $csrf_token
     ]);
 } catch (Exception $e) {
     error_log("Error in favourites.php: " . $e->getMessage());

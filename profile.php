@@ -3,11 +3,14 @@
 session_start();
 
 require_once 'vendor/autoload.php';
+require_once 'session_helper.php';
 
 // Classes used in this page
 use Adam\AwPhpProject\Account;
 use Adam\AwPhpProject\App;
 use Adam\AwPhpProject\Security;
+use Twig\Loader\FilesystemLoader;
+use Twig\Environment;
 
 // Create app from App class
 $app = new App();
@@ -27,7 +30,23 @@ if (isset($_SESSION['email'])) {
 $account = new Account();
 
 // Get account data
-$account_data = $account->getUserByEmail($_SESSION['email']);
+if (!$account->getUserByEmail($_SESSION['email'])) {
+    header('Location: login.php?error=User not found');
+    exit();
+}
+
+// Check if user is active
+if (!$account->isActive()) {
+    header('Location: login.php?error=Your account has been deactivated');
+    exit();
+}
+
+// Initialize Twig
+$loader = new FilesystemLoader('templates');
+$twig = new Environment($loader);
+
+// Add Security class to Twig globals
+$twig->addGlobal('security', new Security());
 
 // Handle form submissions
 $success_message = '';
@@ -39,7 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
         $errors[] = "Invalid CSRF token";
         echo $twig->render('profile.twig', [
             'errors' => $errors,
-            'success_message' => $success_message
+            'success_message' => $success_message,
+            'account' => $account
         ]);
         exit;
     }
@@ -60,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
             if ($account->updateUsername($_SESSION['email'], $new_username)) {
                 $_SESSION['username'] = $new_username;
                 $success_message = "Username updated successfully.";
-                $account_data['username'] = $new_username;
+                $account->getUserByEmail($_SESSION['email']); // Refresh account data
             } else {
                 $error_message = "Failed to update username. Please try again.";
             }
@@ -81,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
             if ($account->updateEmail($_SESSION['email'], $new_email)) {
                 $_SESSION['email'] = $new_email;
                 $success_message = "Email updated successfully.";
-                $account_data['email'] = $new_email;
+                $account->getUserByEmail($new_email); // Refresh account data with new email
             } else {
                 $error_message = "Failed to update email. Please try again.";
             }
@@ -109,16 +129,12 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
     }
 }
 
-// Loading the twig template
-$loader = new \Twig\Loader\FilesystemLoader('templates');
-$twig = new \Twig\Environment($loader);
-$template = $twig->load('profile.twig');
-
-// Render the output
-echo $template->render([
-    'website_name' => $site_name,
-    'loggedin' => $isauthenticated,
-    'user' => $account_data,
+// Render the profile template
+echo $twig->render('profile.twig', [
+    'account' => $account,
     'success_message' => $success_message,
-    'error_message' => $error_message
+    'error_message' => $error_message,
+    'loggedin' => $isauthenticated,
+    'is_admin' => $account->isAdmin(),
+    'current_page' => 'profile'
 ]);

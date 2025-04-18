@@ -4,13 +4,24 @@ session_start();
 require_once 'config.php';
 require_once 'vendor/autoload.php';
 require_once 'session_helper.php';
+require_once 'src/Account.php';
 
 use Twig\Loader\FilesystemLoader;
 use Twig\Environment;
+use Adam\AwPhpProject\Account;
 
 // Initialize Twig
 $loader = new FilesystemLoader('templates');
 $twig = new Environment($loader);
+
+// Check admin status
+$is_admin = false;
+if (isLoggedIn()) {
+    $account = new Account();
+    if ($account->getUserById($_SESSION['user_id'])) {
+        $is_admin = $account->isAdmin();
+    }
+}
 
 // Connect to database
 $db = getDBConnection();
@@ -95,6 +106,7 @@ try {
 // Render template
 echo $twig->render('index.twig', [
     'loggedin' => isLoggedIn(),
+    'is_admin' => isAdmin(),
     'featured_game' => $featured_game,
     'popular_games' => $popular_games,
     'news' => $news,

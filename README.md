@@ -28,6 +28,13 @@ A PHP-based web application for managing and reviewing board games.
    - Copy `.env.example` to `.env`
    - Update database credentials in `.env`
 
+## Default Admin Account
+
+After installation, a default admin account is created with the following credentials:
+- Email: admin@example.com
+- Password: admin123
+- Username: admin
+
 ## Database Structure
 
 The application uses the following main tables:
