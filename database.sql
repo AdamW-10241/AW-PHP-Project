@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS BoardGame_Artist;
 DROP TABLE IF EXISTS BoardGame_Designer;
 DROP TABLE IF EXISTS BoardGame_Publisher;
 DROP TABLE IF EXISTS Newsletter_Subscriber;
+DROP TABLE IF EXISTS Feedback;
 
 -- Drop main tables after their dependencies
 DROP TABLE IF EXISTS BoardGame;
@@ -197,6 +198,17 @@ CREATE TABLE IF NOT EXISTS Newsletter_Subscriber (
     subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_active BOOLEAN DEFAULT TRUE
 );
+
+-- Create Feedback table
+CREATE TABLE IF NOT EXISTS Feedback (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('new', 'read', 'replied') DEFAULT 'new'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insert sample publishers only if table is empty
 INSERT INTO Publisher (name)

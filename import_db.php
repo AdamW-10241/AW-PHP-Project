@@ -75,7 +75,8 @@ try {
         'Favourite' => $pdo->query("SELECT COUNT(*) FROM Favourite")->fetchColumn(),
         'Blog_Post' => $pdo->query("SELECT COUNT(*) FROM Blog_Post")->fetchColumn(),
         'Comment' => $pdo->query("SELECT COUNT(*) FROM Comment")->fetchColumn(),
-        'Newsletter_Subscriber' => $pdo->query("SELECT COUNT(*) FROM Newsletter_Subscriber")->fetchColumn()
+        'Newsletter_Subscriber' => $pdo->query("SELECT COUNT(*) FROM Newsletter_Subscriber")->fetchColumn(),
+        'Feedback' => $pdo->query("SELECT COUNT(*) FROM Feedback")->fetchColumn()
     ];
 
     echo "\nSample data imported:\n";

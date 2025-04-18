@@ -4,6 +4,7 @@ namespace Adam\AwPhpProject;
 use \Exception;
 use Adam\AwPhpProject\Database;
 use PDO;
+use PDOException;
 
 class BoardGame extends Database {
     public function __construct()
@@ -134,8 +135,14 @@ class BoardGame extends Database {
         if ($detail) {
             $reviews_query = "
                 SELECT 
-                    r.*,
-                    u.email as user_email
+                    r.id,
+                    r.game_id,
+                    r.user_id,
+                    r.star_rating as rating,
+                    r.comment,
+                    r.created_at,
+                    u.email as user_email,
+                    u.username
                 FROM Review r
                 JOIN Account u ON r.user_id = u.id
                 WHERE r.game_id = ?
@@ -157,7 +164,12 @@ class BoardGame extends Database {
     public function getReviews() {
         $reviews_query = "
             SELECT 
-                r.*,
+                r.id,
+                r.game_id,
+                r.user_id,
+                r.star_rating as rating,
+                r.comment,
+                r.created_at,
                 u.email as email,
                 u.username as username,
                 g.title as game_title,
@@ -210,38 +222,39 @@ class BoardGame extends Database {
     public function addReview($game_id, $user_id, $star_rating, $comment) {
         error_log("Adding review - Game ID: " . $game_id . ", User ID: " . $user_id . ", Rating: " . $star_rating);
         
-        // Check if user already reviewed this game
-        $check_query = "SELECT id FROM Review WHERE user_id = ? AND game_id = ?";
-        $check_stmt = $this->connection->prepare($check_query);
-        if (!$check_stmt) {
-            error_log("Failed to prepare check query: " . $this->connection->error);
-            throw new Exception("Database error");
-        }
-        
-        $check_stmt->bind_param("ii", $user_id, $game_id);
-        if (!$check_stmt->execute()) {
-            error_log("Failed to execute check query: " . $check_stmt->error);
-            throw new Exception("Database error");
-        }
-        
-        $result = $check_stmt->get_result();
-        
-        if ($result->num_rows > 0) {
-            throw new Exception("You have already reviewed this game");
-        }
-
-        // Add the review
-        $insert_query = "INSERT INTO Review (game_id, user_id, rating, comment) VALUES (?, ?, ?, ?)";
-        $insert_stmt = $this->connection->prepare($insert_query);
-        if (!$insert_stmt) {
-            error_log("Failed to prepare insert query: " . $this->connection->error);
-            throw new Exception("Database error");
-        }
-        
-        $insert_stmt->bind_param("iiis", $game_id, $user_id, $star_rating, $comment);
-        if (!$insert_stmt->execute()) {
-            error_log("Failed to execute insert query: " . $insert_stmt->error);
-            throw new Exception("Database error");
+        try {
+            // Start transaction
+            $this->connection->begin_transaction();
+            
+            // Check if user already has a review for this game
+            $check_query = "SELECT id FROM Review WHERE game_id = ? AND user_id = ?";
+            $check_stmt = $this->connection->prepare($check_query);
+            $check_stmt->bind_param("ii", $game_id, $user_id);
+            $check_stmt->execute();
+            $result = $check_stmt->get_result();
+            
+            if ($result->num_rows > 0) {
+                $this->connection->rollback();
+                return false; // User already has a review for this game
+            }
+            
+            // Insert new review
+            $insert_query = "INSERT INTO Review (game_id, user_id, star_rating, comment) VALUES (?, ?, ?, ?)";
+            $insert_stmt = $this->connection->prepare($insert_query);
+            $insert_stmt->bind_param("iiis", $game_id, $user_id, $star_rating, $comment);
+            
+            if (!$insert_stmt->execute()) {
+                $this->connection->rollback();
+                error_log("Error executing insert query: " . $insert_stmt->error);
+                return false;
+            }
+            
+            $this->connection->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->connection->rollback();
+            error_log("Error adding review: " . $e->getMessage());
+            return false;
         }
     }
 
@@ -261,7 +274,7 @@ class BoardGame extends Database {
         $types = "";
         
         if ($star_rating !== null) {
-            $updates[] = "rating = ?";
+            $updates[] = "star_rating = ?";
             $params[] = $star_rating;
             $types .= "i";
         }
@@ -308,9 +321,14 @@ class BoardGame extends Database {
     public function getReviewsForGame($game_id) {
         $reviews_query = "
             SELECT 
-                r.*,
+                r.id,
+                r.game_id,
+                r.user_id,
+                r.star_rating as rating,
+                r.comment,
+                r.created_at,
                 u.email as email,
-                u.username as username
+                u.username
             FROM Review r
             JOIN Account u ON r.user_id = u.id
             WHERE r.game_id = ?
