@@ -78,9 +78,14 @@ try {
     $params = [];
 
     if ($query) {
-        $sql .= " AND (title LIKE ? OR description LIKE ? OR publisher LIKE ?)";
-        $searchTerm = "%$query%";
-        $params[] = $searchTerm;
+        // Clean the search term: remove special characters but keep spaces
+        $cleanQuery = strtolower(preg_replace('/[^a-zA-Z0-9\s]/', '', $query));
+        $searchTerm = "%$cleanQuery%";
+        
+        $sql .= " AND (
+            LOWER(REPLACE(title, ':', '')) LIKE ? OR 
+            LOWER(REPLACE(description, ':', '')) LIKE ?
+        )";
         $params[] = $searchTerm;
         $params[] = $searchTerm;
     }
@@ -97,16 +102,16 @@ try {
 
     if ($min_price || $max_price) {
         $sql .= " AND (
-            (min_price <= ? AND max_price >= ?) OR  -- Game range contains selected range
-            (min_price >= ? AND min_price <= ?) OR  -- Game starts within selected range
-            (max_price >= ? AND max_price <= ?)     -- Game ends within selected range
+            (min_price <= ? AND max_price >= ?) OR
+            (min_price >= ? AND min_price <= ?) OR
+            (max_price >= ? AND max_price <= ?)
         )";
-        $params[] = $max_price;  // For first condition
-        $params[] = $min_price;  // For first condition
-        $params[] = $min_price;  // For second condition
-        $params[] = $max_price;  // For second condition
-        $params[] = $min_price;  // For third condition
-        $params[] = $max_price;  // For third condition
+        $params[] = $max_price;
+        $params[] = $min_price;
+        $params[] = $min_price;
+        $params[] = $max_price;
+        $params[] = $min_price;
+        $params[] = $max_price;
     }
 
     if ($genre) {
@@ -126,22 +131,25 @@ try {
 
     if ($min_playtime || $max_playtime) {
         $sql .= " AND (
-            (min_playtime <= ? AND max_playtime >= ?) OR  -- Game range contains selected range
-            (min_playtime >= ? AND min_playtime <= ?) OR  -- Game starts within selected range
-            (max_playtime >= ? AND max_playtime <= ?)     -- Game ends within selected range
+            (min_playtime <= ? AND max_playtime >= ?) OR
+            (min_playtime >= ? AND min_playtime <= ?) OR
+            (max_playtime >= ? AND max_playtime <= ?)
         )";
-        $params[] = $max_playtime;  // For first condition
-        $params[] = $min_playtime;  // For first condition
-        $params[] = $min_playtime;  // For second condition
-        $params[] = $max_playtime;  // For second condition
-        $params[] = $min_playtime;  // For third condition
-        $params[] = $max_playtime;  // For third condition
+        $params[] = $max_playtime;
+        $params[] = $min_playtime;
+        $params[] = $min_playtime;
+        $params[] = $max_playtime;
+        $params[] = $min_playtime;
+        $params[] = $max_playtime;
     }
 
     $stmt = $db->prepare($sql);
     $stmt->execute($params);
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+    
+    // Also check what games exist in the database
+    $allGames = $db->query("SELECT title FROM BoardGame")->fetchAll(PDO::FETCH_COLUMN);
+    
     // Update image paths to include the correct directory
     foreach ($results as &$game) {
         $game['image'] = 'assets/cover_images/' . $game['image'];
@@ -157,7 +165,7 @@ echo $twig->render('search.twig', [
     'loggedin' => isLoggedIn(),
     'is_admin' => isAdmin(),
     'query' => $query,
-    'results' => $results,
+    'results' => $data['results'],
     'franchise' => $franchise,
     'brand' => $brand,
     'min_price' => $min_price,
