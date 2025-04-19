@@ -27,7 +27,7 @@ function isAdmin() {
     }
     
     $account = new Account();
-    if ($account->getUserById($_SESSION['user_id'])) {
+    if ($account->getUserByEmail($_SESSION['email'])) {
         return $account->isAdmin();
     }
     return false;

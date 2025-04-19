@@ -1,6 +1,8 @@
 <?php
+session_start();
 require_once 'vendor/autoload.php';
 require_once 'config.php';
+require_once 'session_helper.php';
 require_once 'src/Account.php';
 require_once 'src/Security.php';
 
@@ -15,13 +17,13 @@ $twig = new \Twig\Environment($loader);
 $twig->addGlobal('security', new Security());
 
 // Check if user is logged in and is admin
-if (!isset($_SESSION['user_id'])) {
+if (!isLoggedIn()) {
     header('Location: login.php?error=Please login first');
     exit;
 }
 
 $account = new Account();
-if (!$account->getUserById($_SESSION['user_id']) || !$account->isAdmin()) {
+if (!$account->getUserByEmail($_SESSION['email']) || !$account->isAdmin()) {
     header('Location: index.php?error=Access denied');
     exit;
 }

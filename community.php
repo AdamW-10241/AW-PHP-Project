@@ -13,8 +13,15 @@ $app = new App();
 
 // Checking if the user is logged in
 $isauthenticated = false;
+$is_admin = false;
 if (isset($_SESSION['email'])) {
     $isauthenticated = true;
+    
+    // Check if user is admin
+    $account = new Account();
+    if ($account->getUserByEmail($_SESSION['email'])) {
+        $is_admin = $account->isAdmin();
+    }
 }
 
 // Loading the twig template
@@ -22,7 +29,6 @@ $loader = new \Twig\Loader\FilesystemLoader('templates');
 $twig = new \Twig\Environment($loader);
 $template = $twig->load('community.twig');
 
-$account = new Account();
 $boardGame = new BoardGame();
 
 // Get all users
@@ -33,6 +39,7 @@ echo $template->render([
     'title' => 'Community',
     'users' => $users,
     'loggedin' => $isauthenticated,
+    'is_admin' => $is_admin,
     'session_email' => $_SESSION['email'],
     'csrf_token' => Security::generateToken(),
     'current_page' => 'community'
