@@ -298,13 +298,17 @@ class Account extends Database {
     }
 
     public function getAllUsers() {
-        $query = "SELECT id, email, username, active, is_admin, created, last_seen FROM Account ORDER BY created DESC";
+        // Get current user's ID if logged in
+        $current_user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
+        
+        $query = "SELECT id, email, username, active, is_admin, created, last_seen FROM Account WHERE id != ? ORDER BY created DESC";
         $statement = $this->connection->prepare($query);
         if (!$statement) {
             error_log("Failed to prepare statement: " . $this->connection->error);
             return [];
         }
         
+        $statement->bind_param("i", $current_user_id);
         if (!$statement->execute()) {
             error_log("Failed to execute statement: " . $statement->error);
             return [];
@@ -371,7 +375,7 @@ class Account extends Database {
     }
 
     public function getUserById($user_id) {
-        $query = "SELECT id, email, username, password, is_admin, active FROM Account WHERE id = ?";
+        $query = "SELECT id, email, username, is_admin, active, created, last_seen FROM Account WHERE id = ?";
         $statement = $this->connection->prepare($query);
         if (!$statement) {
             error_log("Failed to prepare statement: " . $this->connection->error);
@@ -388,14 +392,8 @@ class Account extends Database {
         $user = $result->fetch_assoc();
         
         if ($user) {
-            $this->id = $user['id'];
-            $this->email = $user['email'];
-            $this->username = $user['username'];
-            $this->password = $user['password'];
-            $this->is_admin = (bool)$user['is_admin'];
-            $this->active = (bool)$user['active'];
-            error_log("User found: ID=" . $this->id . ", Email=" . $this->email . ", Admin=" . $this->is_admin . ", Active=" . $this->active);
-            return true;
+            error_log("User found: ID=" . $user['id'] . ", Email=" . $user['email'] . ", Admin=" . $user['is_admin'] . ", Active=" . $user['active']);
+            return $user;
         }
         
         error_log("No user found for ID: " . $user_id);

@@ -345,6 +345,51 @@ class BoardGame extends Database {
         return $reviews;
     }
 
+    public function getUserFavorites($user_id) {
+        $query = "
+            SELECT 
+                b.id,
+                b.title,
+                b.description,
+                b.image,
+                b.year,
+                b.player_range,
+                b.age_range,
+                b.min_playtime,
+                b.max_playtime,
+                b.visible,
+                f.position
+            FROM BoardGame b
+            JOIN Favourite f ON b.id = f.boardgame_id
+            WHERE f.user_id = ?
+            ORDER BY f.position ASC
+        ";
+        
+        $statement = $this->connection->prepare($query);
+        if (!$statement) {
+            error_log("Failed to prepare statement: " . $this->connection->error);
+            return [];
+        }
+        
+        $statement->bind_param("i", $user_id);
+        if (!$statement->execute()) {
+            error_log("Failed to execute statement: " . $statement->error);
+            return [];
+        }
+        
+        $result = $statement->get_result();
+        $favorites = [];
+        while ($row = $result->fetch_assoc()) {
+            // Fix image path if needed
+            if (!empty($row['image']) && !filter_var($row['image'], FILTER_VALIDATE_URL)) {
+                $row['image'] = '/images/' . $row['image'];
+            }
+            $favorites[] = $row;
+        }
+        
+        return $favorites;
+    }
+
     public function hasUserReviewed($user_id, $game_id) {
         $check_query = "SELECT id FROM Review WHERE user_id = ? AND game_id = ?";
         $check_stmt = $this->connection->prepare($check_query);
