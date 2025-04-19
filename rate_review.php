@@ -1,4 +1,9 @@
 <?php
+// Disable error display and enable error logging
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+error_reporting(E_ALL);
+
 // Start session and set headers before any output
 session_start();
 header('Content-Type: application/json');
@@ -49,7 +54,12 @@ if (!isset($input['review_id']) || !isset($input['rating'])) {
 
 try {
     // Sanitize and validate inputs
-    $reviewId = Security::validateInteger($input['review_id']);
+    if (!Security::validateInteger($input['review_id'])) {
+        echo json_encode(['success' => false, 'error' => 'Invalid review ID']);
+        exit;
+    }
+    $reviewId = intval($input['review_id']);
+    
     $rating = intval($input['rating']); // Convert to integer
     
     error_log("Rating value: " . $rating);

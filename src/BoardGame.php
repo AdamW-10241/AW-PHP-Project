@@ -574,23 +574,29 @@ class BoardGame extends Database {
                 FROM ReviewRating 
                 WHERE review_id = ? AND user_id = ?
             ");
-            $stmt->execute([$reviewId, $userId]);
-            $existingRating = $stmt->fetchColumn();
+            $stmt->bind_param("ii", $reviewId, $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $existingRating = $result->fetch_assoc();
 
-            if ($existingRating === false) {
+            if ($existingRating === null) {
                 // User hasn't rated this review yet - insert new rating
                 $stmt = $this->connection->prepare("
                     INSERT INTO ReviewRating (review_id, user_id, rating)
                     VALUES (?, ?, ?)
                 ");
-                $stmt->execute([$reviewId, $userId, $rating]);
-            } else if ($existingRating == $rating) {
+                $stmt->bind_param("iii", $reviewId, $userId, $rating);
+                $stmt->execute();
+                $action = 'added';
+            } else if ($existingRating['rating'] == $rating) {
                 // User is trying to rate the same way again - remove the rating
                 $stmt = $this->connection->prepare("
                     DELETE FROM ReviewRating 
                     WHERE review_id = ? AND user_id = ?
                 ");
-                $stmt->execute([$reviewId, $userId]);
+                $stmt->bind_param("ii", $reviewId, $userId);
+                $stmt->execute();
+                $action = 'removed';
             } else {
                 // User is changing their rating - update it
                 $stmt = $this->connection->prepare("
@@ -598,7 +604,9 @@ class BoardGame extends Database {
                     SET rating = ? 
                     WHERE review_id = ? AND user_id = ?
                 ");
-                $stmt->execute([$rating, $reviewId, $userId]);
+                $stmt->bind_param("iii", $rating, $reviewId, $userId);
+                $stmt->execute();
+                $action = 'updated';
             }
 
             // Get updated counts
@@ -609,13 +617,15 @@ class BoardGame extends Database {
                 FROM ReviewRating 
                 WHERE review_id = ?
             ");
-            $stmt->execute([$reviewId]);
-            $counts = $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt->bind_param("i", $reviewId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $counts = $result->fetch_assoc();
 
             return [
-                'action' => $existingRating === false ? 'added' : ($existingRating == $rating ? 'removed' : 'changed'),
-                'like_count' => (int)$counts['like_count'],
-                'dislike_count' => (int)$counts['dislike_count']
+                'action' => $action,
+                'like_count' => $counts['like_count'] ?? 0,
+                'dislike_count' => $counts['dislike_count'] ?? 0
             ];
 
         } catch (Exception $e) {

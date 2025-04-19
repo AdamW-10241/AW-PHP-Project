@@ -194,7 +194,7 @@
         button.addEventListener('click', async function() {
             const reviewId = this.dataset.reviewId;
             const rating = parseInt(this.dataset.rating);
-            const csrfToken = document.getElementById('csrf_token').value;
+            const csrfToken = document.querySelector('input[name="csrf_token"]').value;
 
             try {
                 const response = await fetch('/rate_review.php', {
@@ -208,6 +208,10 @@
                         csrf_token: csrfToken
                     })
                 });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
 
                 const data = await response.json();
                 
@@ -250,25 +254,27 @@
     // Handle review edit and delete buttons
     document.querySelectorAll('.edit-review').forEach(button => {
         button.addEventListener('click', function() {
-            const reviewContent = this.closest('.review-content');
-            const editForm = reviewContent.nextElementSibling;
+            const reviewCard = this.closest('.card');
+            const content = reviewCard.querySelector('.review-content');
+            const editForm = reviewCard.querySelector('.edit-form');
             
-            reviewContent.classList.add('d-none');
+            content.classList.add('d-none');
             editForm.classList.remove('d-none');
         });
     });
 
     document.querySelectorAll('.cancel-edit').forEach(button => {
         button.addEventListener('click', function() {
-            const editForm = this.closest('.edit-form');
-            const reviewContent = editForm.previousElementSibling;
+            const reviewCard = this.closest('.card');
+            const content = reviewCard.querySelector('.review-content');
+            const editForm = reviewCard.querySelector('.edit-form');
             
+            content.classList.remove('d-none');
             editForm.classList.add('d-none');
-            reviewContent.classList.remove('d-none');
         });
     });
 
-    // Handle delete review button
+    // Handle delete review
     document.querySelectorAll('.delete-review').forEach(button => {
         button.addEventListener('click', function() {
             const reviewId = this.dataset.reviewId;
