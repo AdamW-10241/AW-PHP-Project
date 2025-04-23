@@ -19,9 +19,11 @@
         <li class="nav-item pe-2">
           <a class="nav-link {% if current_page == 'reviews' %}active{% endif %}" href="/reviews.php">Reviews</a>
         </li>
+        {% if loggedin %}
         <li class="nav-item pe-2">
           <a class="nav-link {% if current_page == 'community' %}active{% endif %}" href="/community.php">Community</a>
         </li>
+        {% endif %}
         <li class="nav-item pe-2">
           <a class="nav-link {% if current_page == 'blog' %}active{% endif %}" href="/blog.php">Blog</a>
         </li>
