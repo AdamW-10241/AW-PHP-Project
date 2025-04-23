@@ -4,19 +4,14 @@ session_start();
 require_once 'config.php';
 require_once 'vendor/autoload.php';
 require_once 'src/Account.php';
-require_once 'src/Security.php';
 
 use Twig\Loader\FilesystemLoader;
 use Twig\Environment;
 use Adam\AwPhpProject\Account;
-use Adam\AwPhpProject\Security;
 
 // Initialize Twig
 $loader = new FilesystemLoader('templates');
 $twig = new Environment($loader);
-
-// Add Security class to Twig globals
-$twig->addGlobal('security', new Security());
 
 // Redirect if already logged in
 if (isset($_SESSION['email'])) {
@@ -33,13 +28,6 @@ $data = [
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validate CSRF token
-    if (!isset($_POST['csrf_token']) || !Security::validateToken($_POST['csrf_token'])) {
-        $data['errors'][] = "Invalid CSRF token";
-        echo $twig->render('login.twig', $data);
-        exit;
-    }
-    
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
     $data['email'] = $email; // Preserve email in form

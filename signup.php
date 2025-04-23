@@ -23,18 +23,12 @@ if (isLoggedIn()) {
 // Initialize variables
 $data = [
     'loggedin' => isLoggedIn(),
-    'error' => null
+    'is_admin' => isAdmin(),
+    'errors' => []
 ];
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validate CSRF token
-    if (!isset($_POST['csrf_token']) || !Security::validateToken($_POST['csrf_token'])) {
-        $errors[] = "Invalid CSRF token";
-        echo $twig->render('signup.twig', ['errors' => $errors]);
-        exit;
-    }
-    
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
     $username = $_POST['username'] ?? '';
@@ -44,9 +38,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = $account->create($email, $password, $username);
         
         if ($result['success'] === 1) {
-            // Set session and redirect
+            // Set session variables directly from the result
             $_SESSION['email'] = $email;
             $_SESSION['username'] = $username;
+            $_SESSION['user_id'] = $result['user_id'] ?? null;
+            $_SESSION['logged_in'] = true;
+            
             header('Location: /index.php');
             exit();
         } else {
@@ -63,9 +60,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Render template
-echo $twig->render('signup.twig', [
-    'errors' => $errors,
-    'loggedin' => isLoggedIn(),
-    'is_admin' => isAdmin()
-]);
+echo $twig->render('signup.twig', $data);
 ?>
