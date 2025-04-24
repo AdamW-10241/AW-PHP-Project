@@ -46,6 +46,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $playtime = trim($_POST['playtime'] ?? '');
                 $age = (int)($_POST['age'] ?? 0);
                 $price = (float)($_POST['price'] ?? 0);
+                $year = (int)($_POST['year'] ?? 0);
+                
+                // Process comma-separated lists
+                $artists = array_filter(array_map('trim', explode(',', $_POST['artists'] ?? '')));
+                $designers = array_filter(array_map('trim', explode(',', $_POST['designers'] ?? '')));
+                $publishers = array_filter(array_map('trim', explode(',', $_POST['publishers'] ?? '')));
                 
                 // Validate required fields
                 if (empty($title)) {
@@ -68,6 +74,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 if ($price <= 0) {
                     $errors[] = "Price must be greater than 0";
+                }
+                if ($year <= 0) {
+                    $errors[] = "Year must be greater than 0";
                 }
                 
                 // Handle image upload
@@ -140,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 // If no errors, create the game
                 if (empty($errors)) {
-                    if ($game->create($title, $description, $min_players, $max_players, $playtime, $age, $price, $image_path)) {
+                    if ($game->create($title, $description, $min_players, $max_players, $playtime, $age, $price, $image_path, $year, $artists, $designers, $publishers)) {
                         $success = "Game created successfully!";
                     } else {
                         $errors[] = "Failed to create game";

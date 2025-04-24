@@ -43,6 +43,26 @@
                                 <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
                             </div>
 
+                            <div class="mb-3">
+                                <label for="year" class="form-label">Year Published</label>
+                                <input type="number" class="form-control" id="year" name="year" min="1900" max="{{ "now"|date("Y") }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="artists" class="form-label">Artists (comma-separated)</label>
+                                <input type="text" class="form-control" id="artists" name="artists" placeholder="e.g., John Smith, Jane Doe">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="designers" class="form-label">Designers (comma-separated)</label>
+                                <input type="text" class="form-control" id="designers" name="designers" placeholder="e.g., John Smith, Jane Doe">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="publishers" class="form-label">Publishers (comma-separated)</label>
+                                <input type="text" class="form-control" id="publishers" name="publishers" placeholder="e.g., Company A, Company B">
+                            </div>
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
@@ -79,6 +99,9 @@
                             </div>
 
                             <div class="mb-3">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i> Note: Please upload PNG files only.
+                                </div>
                                 <label for="image" class="form-label">Game Image</label>
                                 <input type="file" class="form-control" id="image" name="image" accept="image/*" required>
                             </div>
@@ -94,6 +117,7 @@
                                 <thead>
                                     <tr>
                                         <th>Title</th>
+                                        <th>Year</th>
                                         <th>Players</th>
                                         <th>Playtime</th>
                                         <th>Actions</th>
@@ -103,6 +127,7 @@
                                     {% for game in games %}
                                     <tr>
                                         <td>{{ game.title }}</td>
+                                        <td>{{ game.year }}</td>
                                         <td>{{ game.min_players }}-{{ game.max_players }}</td>
                                         <td>{{ game.playtime }} min</td>
                                         <td>

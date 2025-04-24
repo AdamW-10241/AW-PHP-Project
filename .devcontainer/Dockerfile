@@ -5,8 +5,12 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y mariadb-client \ 
     && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
-# Install php-mysql driver
-RUN docker-php-ext-install mysqli pdo pdo_mysql
+# Install php-mysql driver and GD extension
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd mysqli pdo pdo_mysql \
+    && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Copy and set up the entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
