@@ -14,7 +14,7 @@ A PHP-based web application for managing and reviewing board games.
    docker exec -it devcontainer-app-1 php import_db.php
    ```
 
-The application will be available at http://localhost:8080
+The application will be available at http://localhost:80
 
 ## Default Admin Account
 - Email: admin@example.com
