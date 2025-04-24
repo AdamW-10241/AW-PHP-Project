@@ -2,149 +2,37 @@
 
 A PHP-based web application for managing and reviewing board games.
 
-## Features
-
-- User authentication (login/signup)
-- Board game catalog with detailed information
-- Game reviews and ratings
-- User favorites
-- News and blog sections
-- Newsletter subscription
-
-## Installation
+## Quick Start
 
 1. Clone the repository
-2. Install dependencies:
+2. Start Docker:
    ```bash
-   composer install
+   docker-compose up -d
    ```
-3. Set up your database:
-   - Create a MariaDB database
-   - Import the database schema:
-     ```bash
-     mysql -u your_username -p your_database < database.sql
-     ```
-4. Configure your environment:
-   - Copy `.env.example` to `.env`
-   - Update database credentials in `.env`
+3. Import the database:
+   ```bash
+   php import_db.php
+   ```
+
+The application will be available at http://localhost:8080
 
 ## Default Admin Account
-
-After installation, a default admin account is created with the following credentials:
 - Email: admin@example.com
 - Password: admin123
-- Username: admin
 
-## Database Structure
+## Troubleshooting
 
-The application uses the following main tables:
-- `Account` - User accounts and authentication
-- `BoardGame` - Main board game information
-- `games` - Featured and popular games
-- `news` - Website news and announcements
-- `reviews` - User reviews and ratings
-- `favorites` - User's favorite games
-- `blog_posts` - Blog content
-
-## Development
-
-The project uses:
-- Twig for templating
-- Bootstrap 5 for styling
-- Font Awesome for icons
-
-## License
-
-This project is licensed under the MIT License.
-
-## Getting Started
-
-### Prerequisites
-
-Before you begin, make sure you have:
-- PHP 8.2+
-- MariaDB 10.4+ (works with 10.4.28)
-- Composer (for dependency management)
-- Docker & Docker Compose (optional but makes setup easier)
-
-### Installation Steps
-
-1. **Configure Environment**
-   ```bash
-   cp .env.dist .env
-   ```
-   Edit the `.env` file with your preferred settings. For Docker, these defaults work well:
-   ```ini
-   DB_HOST="db"
-   DB_USER="mariadb"
-   DB_PASS="mariadb"
-   DB_NAME="mariadb"
-   ```
-
-2. **Install Dependencies**
-   ```bash
-   composer install
-   ```
-
-3. **Database Setup**
-   Run the initialization script:
-   ```bash
-   php setup_database.php
-   ```
-
-   This creates all tables and populates them with sample board game data.
-
-### Running the Application
-
-#### Docker Method (Recommended)
+If you encounter issues:
 ```bash
-docker-compose up -d
+# Check Docker logs
+docker-compose logs
+
+# Check database connection
+docker-compose exec db mysql -u mariadb -pmariadb mariadb
+
+# Check PHP error logs
+docker-compose exec app tail -f /var/log/apache2/error.log
 ```
-The site will be live at `http://localhost` with phpMyAdmin at `http://localhost:8082`
-
-#### Manual Setup
-1. Configure your web server (Apache/Nginx)
-2. Update `.env` with your local DB credentials
-3. Access through your configured domain/port
-
-## What's Included
-
-### Sample Data
-We've pre-loaded the database with 24 popular games:
-
-Each game has:
-- High-quality cover art
-- Descriptions
-- Player count and duration info
-- Related designers/publishers
-
-### Key Features
-- User authentication system
-- Game database browser
-- Review functionality
-
-## Development Notes
-
-### VS Code Users
-We've included dev container configuration - just:
-1. Install the Remote-Containers extension
-2. Open the project
-3. Click "Reopen in Container"
-
-### Common Issues
-
-**Database Problems?**
-- Check container status: `docker ps`
-- Verify `.env` credentials match your DB
-- Try re-running `setup_database.php`
-
-**Missing Images?**
-- Ensure `assets/cover_images` exists
-- Check file permissions
-
-**phpMyAdmin Not Working?**
-- Confirm port 8082 is free
-- Try `docker-compose restart`
 
 # AW-PHP-Project
 A PHP project for **Advanced Web** - Semester 1 2025.
