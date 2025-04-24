@@ -8,12 +8,17 @@ services:
 
     volumes:
       - ..:/var/www/html:cached
+      - ./entrypoint.sh:/usr/local/bin/entrypoint.sh
+      - ../.env:/var/www/html/.env
 
     # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity
 
     ports:
       - "80:80"
+
+    env_file:
+      - ../.env
 
     depends_on:
       - db
@@ -24,10 +29,10 @@ services:
     volumes:
       - mariadb-data:/var/lib/mysql
     environment:
-      MYSQL_ROOT_PASSWORD: mariadb
-      MYSQL_DATABASE: mariadb
-      MYSQL_USER: mariadb
-      MYSQL_PASSWORD: mariadb
+      MYSQL_ROOT_PASSWORD: ${DB_PASS}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
 
     # Add "forwardPorts": ["3306"] to **devcontainer.json** to forward MariaDB locally.
     # (Adding the "ports" property to this file will not forward from a Codespace.)

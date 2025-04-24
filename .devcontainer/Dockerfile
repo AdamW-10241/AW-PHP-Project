@@ -8,6 +8,11 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 # Install php-mysql driver
 RUN docker-php-ext-install mysqli pdo pdo_mysql
 
+# Copy and set up the entrypoint script
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
 # [Optional] Uncomment this section to install additional OS packages.
 # RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 #     && apt-get -y install --no-install-recommends <your-package-list-here>
