@@ -11,7 +11,7 @@ A PHP-based web application for managing and reviewing board games.
    ```
 3. Import the database:
    ```bash
-   php import_db.php
+   docker exec -it devcontainer-app-1 php import_db.php
    ```
 
 The application will be available at http://localhost:8080
