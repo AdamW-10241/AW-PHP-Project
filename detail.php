@@ -79,56 +79,102 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['email'])) {
     error_log("POST data: " . print_r($_POST, true));
     error_log("Session data: " . print_r($_SESSION, true));
     
-    // Handle new review submission
-    $game_id = $_POST['game_id'] ?? null;
-    $rating = $_POST['rating'] ?? null;
-    $review_text = $_POST['review_text'] ?? null;
+    if (isset($_POST['action'])) {
+        error_log("Action found: " . $_POST['action']);
+        
+        if ($_POST['action'] === 'delete') {
+            // Handle delete review
+            $review_id = $_POST['review_id'] ?? null;
 
-    error_log("Review submission attempt - Game ID: $game_id, Rating: $rating, Review Text Length: " . strlen($review_text));
-    
-    if ($game_id && $rating && $review_text) {
-        try {
-            $account = new Account();
-            error_log("Attempting to get user by email: " . $_SESSION['email']);
-            
-            if (!$account->getUserByEmail($_SESSION['email'])) {
-                error_log("User not found for email: " . $_SESSION['email']);
-                throw new Exception("User not found");
-            }
-            
-            $user_id = $account->getId();
-            error_log("User found, ID: " . $user_id);
-            error_log("Calling addReview with params: game_id=" . $game_id . ", user_id=" . $user_id . ", rating=" . $rating);
-            
-            // Check if user has already reviewed this game
-            $has_reviewed = $boardgame->hasUserReviewed($user_id, $game_id);
-            error_log("User has already reviewed this game: " . ($has_reviewed ? "yes" : "no"));
-            
-            if ($has_reviewed) {
-                throw new Exception("You have already reviewed this game");
-            }
-            
-            $result = $boardgame->addReview($game_id, $user_id, $rating, $review_text);
-            error_log("addReview result: " . ($result ? "success" : "failed"));
-            
-            if (!$result) {
-                throw new Exception("Failed to add review");
-            }
+            if ($review_id) {
+                try {
+                    if (!$account->getUserByEmail($_SESSION['email'])) {
+                        throw new Exception("User not found");
+                    }
 
-            error_log("Review added successfully, redirecting...");
-            // Redirect to the same page to show the new review
-            header("Location: detail.php?id=" . $game_id);
-            exit;
-        } catch (Exception $e) {
-            error_log("Error in review submission: " . $e->getMessage());
-            $error = "Error submitting review: " . $e->getMessage();
+                    $boardgame->deleteReview($review_id, $account->getId());
+
+                    // Redirect to the same page to show the updated reviews
+                    header("Location: detail.php?id=" . $_GET['id']);
+                    exit;
+                } catch (Exception $e) {
+                    $error = "Error deleting review: " . $e->getMessage();
+                }
+            }
+        } elseif ($_POST['action'] === 'edit') {
+            // Handle edit review
+            $review_id = $_POST['review_id'] ?? null;
+            $rating = $_POST['rating'] ?? null;
+            $review_text = $_POST['review_text'] ?? null;
+
+            if ($review_id && $rating && $review_text) {
+                try {
+                    if (!$account->getUserByEmail($_SESSION['email'])) {
+                        throw new Exception("User not found");
+                    }
+
+                    $boardgame->updateReview($review_id, $account->getId(), $rating, $review_text);
+
+                    // Redirect to the same page to show the updated review
+                    header("Location: detail.php?id=" . $_GET['id']);
+                    exit;
+                } catch (Exception $e) {
+                    $error = "Error updating review: " . $e->getMessage();
+                }
+            }
         }
     } else {
-        error_log("Missing required fields for review submission");
-        error_log("Game ID: " . ($game_id ? "present" : "missing"));
-        error_log("Rating: " . ($rating ? "present" : "missing"));
-        error_log("Review Text: " . ($review_text ? "present" : "missing"));
-        $error = "Please fill in all fields";
+        // Handle new review submission
+        $game_id = $_POST['game_id'] ?? null;
+        $rating = $_POST['rating'] ?? null;
+        $review_text = $_POST['review_text'] ?? null;
+
+        error_log("Review submission attempt - Game ID: $game_id, Rating: $rating, Review Text Length: " . ($review_text ? strlen($review_text) : 0));
+        
+        if ($game_id && $rating && $review_text) {
+            try {
+                $account = new Account();
+                error_log("Attempting to get user by email: " . $_SESSION['email']);
+                
+                if (!$account->getUserByEmail($_SESSION['email'])) {
+                    error_log("User not found for email: " . $_SESSION['email']);
+                    throw new Exception("User not found");
+                }
+                
+                $user_id = $account->getId();
+                error_log("User found, ID: " . $user_id);
+                error_log("Calling addReview with params: game_id=" . $game_id . ", user_id=" . $user_id . ", rating=" . $rating);
+                
+                // Check if user has already reviewed this game
+                $has_reviewed = $boardgame->hasUserReviewed($user_id, $game_id);
+                error_log("User has already reviewed this game: " . ($has_reviewed ? "yes" : "no"));
+                
+                if ($has_reviewed) {
+                    throw new Exception("You have already reviewed this game");
+                }
+                
+                $result = $boardgame->addReview($game_id, $user_id, $rating, $review_text);
+                error_log("addReview result: " . ($result ? "success" : "failed"));
+                
+                if (!$result) {
+                    throw new Exception("Failed to add review");
+                }
+
+                error_log("Review added successfully, redirecting...");
+                // Redirect to the same page to show the new review
+                header("Location: detail.php?id=" . $game_id);
+                exit;
+            } catch (Exception $e) {
+                error_log("Error in review submission: " . $e->getMessage());
+                $error = "Error submitting review: " . $e->getMessage();
+            }
+        } else {
+            error_log("Missing required fields for review submission");
+            error_log("Game ID: " . ($game_id ? "present" : "missing"));
+            error_log("Rating: " . ($rating ? "present" : "missing"));
+            error_log("Review Text: " . ($review_text ? "present" : "missing"));
+            $error = "Please fill in all fields";
+        }
     }
     error_log("=== Review Submission Process Ended ===");
 }
