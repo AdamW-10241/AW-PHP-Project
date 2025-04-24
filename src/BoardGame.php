@@ -220,40 +220,63 @@ class BoardGame extends Database {
     }
 
     public function addReview($game_id, $user_id, $star_rating, $comment) {
-        error_log("Adding review - Game ID: " . $game_id . ", User ID: " . $user_id . ", Rating: " . $star_rating);
+        error_log("=== BoardGame::addReview Started ===");
+        error_log("Parameters - Game ID: $game_id, User ID: $user_id, Rating: $star_rating, Comment Length: " . strlen($comment));
         
         try {
             // Start transaction
             $this->connection->begin_transaction();
+            error_log("Transaction started");
             
             // Check if user already has a review for this game
             $check_query = "SELECT id FROM Review WHERE game_id = ? AND user_id = ?";
+            error_log("Checking for existing review with query: $check_query");
             $check_stmt = $this->connection->prepare($check_query);
             $check_stmt->bind_param("ii", $game_id, $user_id);
             $check_stmt->execute();
             $result = $check_stmt->get_result();
             
             if ($result->num_rows > 0) {
+                error_log("User already has a review for this game");
                 $this->connection->rollback();
-                return false; // User already has a review for this game
+                return false;
             }
             
             // Insert new review
             $insert_query = "INSERT INTO Review (game_id, user_id, star_rating, comment) VALUES (?, ?, ?, ?)";
+            error_log("Preparing to insert review with query: $insert_query");
             $insert_stmt = $this->connection->prepare($insert_query);
-            $insert_stmt->bind_param("iiis", $game_id, $user_id, $star_rating, $comment);
             
-            if (!$insert_stmt->execute()) {
+            // Sanitize the comment
+            $comment = htmlspecialchars($comment, ENT_QUOTES, 'UTF-8');
+            
+            if (!$insert_stmt) {
+                error_log("Failed to prepare statement: " . $this->connection->error);
                 $this->connection->rollback();
-                error_log("Error executing insert query: " . $insert_stmt->error);
                 return false;
             }
             
+            if (!$insert_stmt->bind_param("iiis", $game_id, $user_id, $star_rating, $comment)) {
+                error_log("Failed to bind parameters: " . $insert_stmt->error);
+                $this->connection->rollback();
+                return false;
+            }
+            
+            if (!$insert_stmt->execute()) {
+                error_log("Error executing insert query: " . $insert_stmt->error);
+                $this->connection->rollback();
+                return false;
+            }
+            
+            error_log("Review inserted successfully");
             $this->connection->commit();
+            error_log("=== BoardGame::addReview Completed Successfully ===");
             return true;
         } catch (Exception $e) {
+            error_log("Exception in addReview: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
             $this->connection->rollback();
-            error_log("Error adding review: " . $e->getMessage());
+            error_log("=== BoardGame::addReview Failed ===");
             return false;
         }
     }

@@ -10,7 +10,12 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) gd mysqli pdo pdo_mysql \
-    && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+    && apt-get clean -y && rm -rf /var/lib/apt/lists/* \
+    && echo "error_log = /var/log/php_errors.log" >> /usr/local/etc/php/conf.d/error-logging.ini \
+    && echo "log_errors = On" >> /usr/local/etc/php/conf.d/error-logging.ini \
+    && echo "display_errors = Off" >> /usr/local/etc/php/conf.d/error-logging.ini \
+    && touch /var/log/php_errors.log \
+    && chmod 666 /var/log/php_errors.log
 
 # Copy and set up the entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
