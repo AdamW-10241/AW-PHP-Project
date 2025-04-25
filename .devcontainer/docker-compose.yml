@@ -8,7 +8,6 @@ services:
 
     volumes:
       - ..:/var/www/html:cached
-      - ./entrypoint.sh:/usr/local/bin/entrypoint.sh
       - ../.env:/var/www/html/.env
 
     # Overrides default command so things don't shut down after the process ends.
@@ -17,8 +16,12 @@ services:
     ports:
       - "80:80"
 
-    env_file:
-      - ../.env
+    environment:
+      DB_HOST: db
+      DB_NAME: boardgames_db
+      DB_USER: mariadb
+      DB_PASS: mariadb
+      SITENAME: "Board Games Website"
 
     depends_on:
       - db
@@ -29,13 +32,13 @@ services:
     volumes:
       - mariadb-data:/var/lib/mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASS}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASS}
+      MYSQL_ROOT_PASSWORD: mariadb
+      MYSQL_DATABASE: boardgames_db
+      MYSQL_USER: mariadb
+      MYSQL_PASSWORD: mariadb
+    ports:
+      - "3306:3306"
 
-    # Add "forwardPorts": ["3306"] to **devcontainer.json** to forward MariaDB locally.
-    # (Adding the "ports" property to this file will not forward from a Codespace.)
   pma: 
     image: phpmyadmin
     environment:
@@ -43,8 +46,7 @@ services:
     depends_on:
       - db
     ports:
-      - 8082:80
+      - "8082:80"
 
-  
 volumes:
   mariadb-data:

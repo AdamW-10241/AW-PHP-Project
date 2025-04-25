@@ -17,10 +17,6 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && touch /var/log/php_errors.log \
     && chmod 666 /var/log/php_errors.log
 
-# Copy and set up the entrypoint script
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # [Optional] Uncomment this section to install additional OS packages.
 # RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
