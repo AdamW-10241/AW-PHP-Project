@@ -64,3 +64,29 @@ docker exec devcontainer-app-1 php import_db.php
 ```
 
 This will create all necessary tables and import sample data.
+
+## Development Environment Setup
+
+1. Clone the repository
+2. Navigate to the project directory
+3. Start the development containers:
+   ```bash
+   docker-compose -f .devcontainer/docker-compose.yml up -d
+   ```
+4. Start Apache in the container:
+   ```bash
+   docker exec devcontainer-app-1 service apache2 start
+   ```
+
+## Access Points
+
+- Web Application: http://localhost:80
+- PHPMyAdmin: http://localhost:8082
+- MariaDB: localhost:3306
+
+## Database Credentials
+
+- Host: db
+- Database: boardgames_db
+- Username: mariadb
+- Password: mariadb
