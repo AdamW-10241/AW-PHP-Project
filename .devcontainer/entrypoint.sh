@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-# Start Apache2 in the background
-service apache2 start
+# Start Apache in the background
+apache2-foreground &
 
-# Run the main command
-exec "$@" 
+# Keep the container running
+tail -f /var/log/apache2/error.log 

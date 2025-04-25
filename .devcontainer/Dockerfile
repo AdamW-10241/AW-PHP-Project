@@ -1,26 +1,33 @@
-FROM mcr.microsoft.com/devcontainers/php:1-8.2-bookworm
+FROM php:8.2-apache
 
-# Install MariaDB client
-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get install -y mariadb-client \ 
-    && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip
 
-# Install php-mysql driver and GD extension
-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) gd mysqli pdo pdo_mysql \
-    && apt-get clean -y && rm -rf /var/lib/apt/lists/* \
-    && echo "error_log = /var/log/php_errors.log" >> /usr/local/etc/php/conf.d/error-logging.ini \
-    && echo "log_errors = On" >> /usr/local/etc/php/conf.d/error-logging.ini \
-    && echo "display_errors = Off" >> /usr/local/etc/php/conf.d/error-logging.ini \
-    && touch /var/log/php_errors.log \
-    && chmod 666 /var/log/php_errors.log
+# Clear cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy and set up the entrypoint script
+# Install PHP extensions
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+
+# Get latest Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Set working directory
+WORKDIR /var/www/html
+
+# Copy entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+# Start Apache
+CMD ["apache2-foreground"]
 
 # [Optional] Uncomment this section to install additional OS packages.
 # RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \

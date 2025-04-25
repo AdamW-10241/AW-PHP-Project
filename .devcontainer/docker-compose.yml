@@ -7,15 +7,14 @@ services:
       dockerfile: Dockerfile
 
     volumes:
-      - ..:/var/www/html:cached
+      - ..:/workspaces/${localWorkspaceFolderBasename}
       - ./entrypoint.sh:/usr/local/bin/entrypoint.sh
-      - ../.env:/var/www/html/.env
 
-    # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity
 
     ports:
       - "80:80"
+      - "8080:8080"
 
     env_file:
       - ../.env
@@ -33,9 +32,9 @@ services:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASS}
+    ports:
+      - "3306:3306"
 
-    # Add "forwardPorts": ["3306"] to **devcontainer.json** to forward MariaDB locally.
-    # (Adding the "ports" property to this file will not forward from a Codespace.)
   pma: 
     image: phpmyadmin
     environment:
@@ -43,8 +42,7 @@ services:
     depends_on:
       - db
     ports:
-      - 8082:80
+      - "8082:80"
 
-  
 volumes:
   mariadb-data:
