@@ -45,10 +45,42 @@ try {
 
     // Get user's favourites
     $stmt = $db->prepare("
-        SELECT b.*, f.id as favourite_id
-        FROM BoardGame b
-        JOIN Favourite f ON b.id = f.boardgame_id
-        WHERE f.user_id = ?
+        SELECT 
+            BoardGame.*, 
+            f.id as favourite_id,
+            f.position as position,
+            GROUP_CONCAT(DISTINCT Publisher.name) as publishers,
+            GROUP_CONCAT(DISTINCT CONCAT(Designer.first_name, ' ', Designer.last_name)) as designers,
+            GROUP_CONCAT(DISTINCT CONCAT(Artist.first_name, ' ', Artist.last_name)) as artists,
+            CONCAT(min_playtime, '-', max_playtime) as playtime_range
+        FROM BoardGame
+        LEFT JOIN BoardGame_Publisher ON BoardGame.id = BoardGame_Publisher.boardgame_id
+        LEFT JOIN Publisher ON BoardGame_Publisher.publisher_id = Publisher.publisher_id
+        LEFT JOIN BoardGame_Designer ON BoardGame.id = BoardGame_Designer.boardgame_id
+        LEFT JOIN Designer ON BoardGame_Designer.designer_id = Designer.designer_id
+        LEFT JOIN BoardGame_Artist ON BoardGame.id = BoardGame_Artist.boardgame_id
+        LEFT JOIN Artist ON BoardGame_Artist.artist_id = Artist.artist_id
+        JOIN Favourite f ON BoardGame.id = f.boardgame_id
+        WHERE BoardGame.visible = 1 AND f.user_id = ?
+        GROUP BY 
+            BoardGame.id,
+            BoardGame.title,
+            BoardGame.tagline,
+            BoardGame.year,
+            BoardGame.description,
+            BoardGame.player_range,
+            BoardGame.age_range,
+            BoardGame.min_playtime,
+            BoardGame.max_playtime,
+            BoardGame.min_price,
+            BoardGame.max_price,
+            BoardGame.image,
+            BoardGame.tags,
+            BoardGame.franchise,
+            BoardGame.brand,
+            BoardGame.genre,
+            BoardGame.visible,
+            BoardGame.created_at
         ORDER BY f.position ASC
     ");
     $stmt->execute([$user_id]);

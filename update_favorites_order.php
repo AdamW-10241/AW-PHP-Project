@@ -74,4 +74,4 @@ try {
 } catch (Exception $e) {
     error_log("Error in update_favorites_order.php: " . $e->getMessage());
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
-} 
+}
