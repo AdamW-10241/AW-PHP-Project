@@ -23,37 +23,63 @@ $is_admin = $loggedin && $account->isAdmin();
 $error = null;
 $success = null;
 
-// Handle blog post creation
+// Handle blog post creation and deletion
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_admin) {
     if (!isset($_POST['csrf_token']) || !Security::validateToken($_POST['csrf_token'])) {
         $error = "Invalid CSRF token";
     } else {
-        $title = $_POST['title'] ?? null;
-        $content = $_POST['content'] ?? null;
-        $image_url = $_POST['image_url'] ?? null;
-
-        if ($title && $content) {
+        // Handle post deletion
+        if (isset($_POST['action']) && $_POST['action'] === 'delete' && isset($_POST['post_id'])) {
             try {
                 $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
                 if ($db->connect_error) {
                     throw new Exception("Connection failed: " . $db->connect_error);
                 }
 
-                $stmt = $db->prepare("INSERT INTO Blog_Post (title, content, author_id, image_url) VALUES (?, ?, ?, ?)");
-                $stmt->bind_param("ssis", $title, $content, $_SESSION['user_id'], $image_url);
+                $post_id = (int)$_POST['post_id'];
+                $stmt = $db->prepare("DELETE FROM Blog_Post WHERE id = ?");
+                $stmt->bind_param("i", $post_id);
                 
                 if ($stmt->execute()) {
-                    $success = "Blog post created successfully!";
+                    $success = "Blog post deleted successfully!";
                     header("Location: blog.php");
                     exit;
                 } else {
-                    throw new Exception("Error creating blog post: " . $stmt->error);
+                    throw new Exception("Error deleting blog post: " . $stmt->error);
                 }
             } catch (Exception $e) {
                 $error = $e->getMessage();
             }
-        } else {
-            $error = "Please fill in all required fields.";
+        } 
+        // Handle post creation
+        else {
+            $title = $_POST['title'] ?? null;
+            $content = $_POST['content'] ?? null;
+            $image_url = $_POST['image_url'] ?? null;
+
+            if ($title && $content) {
+                try {
+                    $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+                    if ($db->connect_error) {
+                        throw new Exception("Connection failed: " . $db->connect_error);
+                    }
+
+                    $stmt = $db->prepare("INSERT INTO Blog_Post (title, content, author_id, image_url) VALUES (?, ?, ?, ?)");
+                    $stmt->bind_param("ssis", $title, $content, $_SESSION['user_id'], $image_url);
+                    
+                    if ($stmt->execute()) {
+                        $success = "Blog post created successfully!";
+                        header("Location: blog.php");
+                        exit;
+                    } else {
+                        throw new Exception("Error creating blog post: " . $stmt->error);
+                    }
+                } catch (Exception $e) {
+                    $error = $e->getMessage();
+                }
+            } else {
+                $error = "Please fill in all required fields.";
+            }
         }
     }
 }
